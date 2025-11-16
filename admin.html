@@ -17,6 +17,103 @@
             min-height: 100vh;
             color: #333;
             padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Стили для формы логина */
+        .login-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .login-title {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-logout {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            padding: 8px 16px;
+            font-size: 13px;
+            width: auto;
+            position: absolute;
+            top: 20px;
+            right: 20px;
         }
 
         .admin-container {
@@ -25,6 +122,8 @@
             border-radius: 16px;
             padding: 20px 15px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            position: relative;
+            display: none;
         }
 
         .header {
@@ -86,63 +185,6 @@
             font-weight: 600;
             margin-bottom: 15px;
             color: #2d3748;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            color: #4a5568;
-            font-size: 14px;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 15px;
-            transition: all 0.3s ease;
-        }
-
-        .form-input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            outline: none;
-        }
-
-        .btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            width: 100%;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
         }
 
         .btn-secondary {
@@ -335,10 +377,57 @@
             border: 2px solid #4ecdc4;
             box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
         }
+
+        .login-credentials {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #718096;
+            text-align: left;
+        }
+
+        .login-credentials strong {
+            color: #2d3748;
+        }
     </style>
 </head>
 <body>
-    <div class="admin-container">
+    <!-- Форма логина -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-icon">🔐</div>
+        <h1 class="login-title">Вход в админ-панель</h1>
+        <p class="login-subtitle">Введите логин и пароль для доступа</p>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label class="form-label">Логин</label>
+                <input type="text" class="form-input" id="login" placeholder="Введите логин" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Пароль</label>
+                <input type="password" class="form-input" id="password" placeholder="Введите пароль" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="loginBtn">
+                🔑 Войти
+            </button>
+        </form>
+
+        <div class="login-credentials">
+            <strong>Тестовые данные для входа:</strong><br>
+            Логин: <strong>admin</strong><br>
+            Пароль: <strong>Wild2024!</strong>
+        </div>
+    </div>
+
+    <!-- Админ-панель (скрыта до авторизации) -->
+    <div class="admin-container" id="adminContainer">
+        <!-- Кнопка выхода -->
+        <button class="btn btn-logout" onclick="logout()">🚪 Выйти</button>
+
         <!-- Шапка -->
         <div class="header">
             <h1>⚡ Админ-панель</h1>
@@ -412,14 +501,24 @@
     </div>
 
     <script>
+        // 🔐 ДАННЫЕ ДЛЯ АВТОРИЗАЦИИ
+        const ADMIN_CREDENTIALS = {
+            login: 'admin',
+            password: 'Wild2024!' // Сгенерированный пароль
+        };
+
         // 🔥 ВАШ URL GOOGLE APPS SCRIPT API
         const API_URL = 'https://script.google.com/macros/s/AKfycbzLhFB5S9SdbAUjEwu-nRNFh-UfptTYfVMh_xq6f16BBINVXl8bCUf4vU5hCvAjZC6apw/exec';
 
         // Хранилище товаров
         let products = [];
         let editingProductId = null;
+        let isAuthenticated = false;
 
         // Элементы
+        const loginContainer = document.getElementById('loginContainer');
+        const adminContainer = document.getElementById('adminContainer');
+        const loginForm = document.getElementById('loginForm');
         const addProductForm = document.getElementById('addProductForm');
         const productsList = document.getElementById('productsList');
         const totalProducts = document.getElementById('totalProducts');
@@ -428,6 +527,56 @@
         const cancelEditBtn = document.getElementById('cancelEdit');
         const formTitle = document.getElementById('formTitle');
         const productFormSection = document.getElementById('productFormSection');
+
+        // Проверка авторизации при загрузке
+        function checkAuth() {
+            const savedAuth = localStorage.getItem('adminAuth');
+            if (savedAuth === 'true') {
+                isAuthenticated = true;
+                showAdminPanel();
+            } else {
+                showLoginForm();
+            }
+        }
+
+        // Показать форму логина
+        function showLoginForm() {
+            loginContainer.style.display = 'block';
+            adminContainer.style.display = 'none';
+            isAuthenticated = false;
+        }
+
+        // Показать админ-панель
+        function showAdminPanel() {
+            loginContainer.style.display = 'none';
+            adminContainer.style.display = 'block';
+            isAuthenticated = true;
+            loadProducts();
+            showAlert('👋 Добро пожаловать в админ-панель!', 'success');
+        }
+
+        // Выход из системы
+        function logout() {
+            localStorage.removeItem('adminAuth');
+            isAuthenticated = false;
+            showLoginForm();
+            loginForm.reset();
+        }
+
+        // Обработчик формы логина
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const login = document.getElementById('login').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (login === ADMIN_CREDENTIALS.login && password === ADMIN_CREDENTIALS.password) {
+                localStorage.setItem('adminAuth', 'true');
+                showAdminPanel();
+            } else {
+                showAlert('❌ Неверный логин или пароль', 'error', loginContainer);
+            }
+        });
 
         // API функции
         async function apiRequest(action, params = {}) {
@@ -446,6 +595,8 @@
 
         // Загрузить товары
         async function loadProducts() {
+            if (!isAuthenticated) return;
+            
             try {
                 productsList.innerHTML = `
                     <div class="loading">
@@ -470,11 +621,11 @@
         }
 
         // Показать уведомление
-        function showAlert(message, type = 'success') {
+        function showAlert(message, type = 'success', container = alertContainer) {
             const alert = document.createElement('div');
             alert.className = `alert alert-${type}`;
             alert.textContent = message;
-            alertContainer.appendChild(alert);
+            container.appendChild(alert);
 
             setTimeout(() => {
                 alert.remove();
@@ -488,6 +639,8 @@
 
         // Показать таб
         function showTab(tabName) {
+            if (!isAuthenticated) return;
+            
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
@@ -501,6 +654,8 @@
 
         // Добавить или обновить товар
         async function saveProduct(productData) {
+            if (!isAuthenticated) return false;
+            
             try {
                 submitBtn.disabled = true;
                 
@@ -543,6 +698,8 @@
 
         // Удалить товар
         async function deleteProduct(productId) {
+            if (!isAuthenticated) return;
+            
             if (confirm('Удалить этот товар?')) {
                 try {
                     const result = await apiRequest('deleteProduct', { id: productId });
@@ -560,28 +717,24 @@
             }
         }
 
-        // Редактировать товар - ИСПРАВЛЕННАЯ ФУНКЦИЯ
+        // Редактировать товар
         function editProduct(productId) {
+            if (!isAuthenticated) return;
+            
             const product = products.find(p => p.id === productId);
             if (product) {
-                // Заполняем форму данными товара
                 document.getElementById('productName').value = product.name;
                 document.getElementById('productImage').value = product.image;
                 document.getElementById('productUrl').value = product.url;
                 
-                // Сохраняем ID редактируемого товара
                 editingProductId = productId;
                 
-                // Обновляем интерфейс для режима редактирования
                 formTitle.textContent = '✏️ Редактировать товар';
                 productFormSection.classList.add('edit-mode');
                 cancelEditBtn.classList.add('show');
                 updateSubmitButton();
                 
-                // Переключаемся на вкладку добавления/редактирования
                 showTab('add');
-                
-                // Прокручиваем к форме
                 document.getElementById('addTab').scrollIntoView({ behavior: 'smooth' });
                 
                 showAlert('Товар готов к редактированию. Измените данные и нажмите "Обновить товар"');
@@ -610,6 +763,8 @@
 
         // Отрисовать товары
         function renderProducts() {
+            if (!isAuthenticated) return;
+            
             if (products.length === 0) {
                 productsList.innerHTML = `
                     <div style="text-align: center; padding: 30px; color: #a0aec0;">
@@ -647,9 +802,10 @@
             `).join('');
         }
 
-        // Обработчик формы
+        // Обработчик формы добавления товара
         addProductForm.addEventListener('submit', async function(e) {
             e.preventDefault();
+            if (!isAuthenticated) return;
             
             const productData = {
                 name: document.getElementById('productName').value.trim(),
@@ -657,7 +813,6 @@
                 url: document.getElementById('productUrl').value.trim()
             };
 
-            // Валидация
             if (!productData.name || !productData.image || !productData.url) {
                 showAlert('❌ Заполните все поля', 'error');
                 return;
@@ -668,8 +823,7 @@
 
         // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
-            loadProducts();
-            showAlert('👋 Добро пожаловать в админ-панель!', 'success');
+            checkAuth();
         });
     </script>
 </body>
