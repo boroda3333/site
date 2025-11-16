@@ -67,14 +67,16 @@
         }
 
         .logo {
-            max-width: 80%;
-            max-height: 120px;
+            max-width: 90%; /* Увеличил с 80% */
+            max-height: 180px; /* Увеличил с 120px */
+            width: auto;
+            height: auto;
             object-fit: contain;
         }
 
         .search-container {
             position: relative;
-            margin: 60px 20px 20px;
+            margin: 60px 20px 20px; /* Этот отступ остался прежним */
         }
 
         .search-box {
@@ -256,8 +258,8 @@
             }
             
             .logo {
-                max-width: 70%;
-                max-height: 100px;
+                max-width: 85%; /* Увеличил для маленьких экранов */
+                max-height: 150px; /* Увеличил для маленьких экранов */
             }
             
             .search-container {
@@ -273,6 +275,11 @@
             
             .product-image-container {
                 height: 150px;
+            }
+            
+            .logo {
+                max-width: 85%;
+                max-height: 160px;
             }
         }
 
@@ -305,8 +312,8 @@
             }
             
             .logo {
-                max-width: 300px;
-                max-height: 140px;
+                max-width: 350px; /* Увеличил с 300px */
+                max-height: 200px; /* Увеличил с 140px */
             }
         }
 
@@ -326,6 +333,10 @@
             
             .product-image-container {
                 height: 170px;
+            }
+            
+            .logo {
+                max-height: 220px; /* Увеличил для высоких экранов */
             }
         }
 
@@ -347,6 +358,11 @@
             
             .search-container {
                 max-width: 450px;
+            }
+            
+            .logo {
+                max-width: 400px;
+                max-height: 250px;
             }
         }
 
@@ -397,7 +413,7 @@
         <!-- Шапка -->
         <div class="header">
             <div class="logo-container">
-                <img src="https://i.imgur.com/6q7Hmr5.png" alt="Логотип" class="logo">
+                <img src="https://i.imgur.com/UvlFXoA.png" alt="Логотип" class="logo">
             </div>
         </div>
 
@@ -445,7 +461,7 @@
                 },
                 {
                     id: "3",
-                    name: "Курьерский пакет", 
+                    name: "Курьерский пакet", 
                     image: "https://i.imgur.com/9Q9Z8ZJ.jpg",
                     url: "https://www.wildberries.ru/catalog/345678/detail.aspx"
                 },
