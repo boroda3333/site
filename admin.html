@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель - Управление товарами</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 15px;
+        }
+
+        .admin-container {
+            max-width: 100%;
+            background: white;
+            border-radius: 16px;
+            padding: 20px 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f1f3f4;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            text-align: center;
+            min-width: 160px;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .form-section {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .form-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2d3748;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #a0aec0, #718096);
+            color: white;
+            margin-right: 10px;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            padding: 8px 12px;
+            font-size: 13px;
+            flex: 1;
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            padding: 8px 12px;
+            font-size: 13px;
+            flex: 1;
+            margin-right: 8px;
+        }
+
+        .products-list {
+            margin-top: 20px;
+        }
+
+        .product-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            flex-direction: column;
+        }
+
+        .product-item:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .product-main {
+            display: flex;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+
+        .product-image {
+            width: 70px;
+            height: 70px;
+            border-radius: 6px;
+            object-fit: cover;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .product-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .product-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #2d3748;
+            font-size: 15px;
+            line-height: 1.3;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .product-url {
+            color: #667eea;
+            font-size: 13px;
+            text-decoration: none;
+            word-break: break-all;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .product-actions {
+            display: flex;
+            width: 100%;
+            gap: 8px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: #f1f3f4;
+            border-radius: 10px;
+            padding: 4px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .tab.active {
+            background: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #feb2b2;
+        }
+
+        .alert-warning {
+            background: #feebc8;
+            color: #744210;
+            border: 1px solid #fbd38d;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px 15px;
+            color: #a0aec0;
+        }
+
+        .loading-spinner {
+            width: 25px;
+            height: 25px;
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .cancel-edit {
+            display: none;
+            background: linear-gradient(135deg, #a0aec0, #718096);
+            color: white;
+        }
+
+        .cancel-edit.show {
+            display: block;
+        }
+
+        .edit-mode {
+            border: 2px solid #4ecdc4;
+            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Шапка -->
+        <div class="header">
+            <h1>⚡ Админ-панель</h1>
+            <p>Управляй товарами для Wildberries каталога</p>
+        </div>
+
+        <!-- Статистика -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalProducts">0</div>
+                <div class="stat-label">Всего товаров</div>
+            </div>
+        </div>
+
+        <!-- Табы -->
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('add')">➕ Добавить товар</div>
+            <div class="tab" onclick="showTab('manage')">📦 Управление товарами</div>
+        </div>
+
+        <!-- Уведомления -->
+        <div id="alertContainer"></div>
+
+        <!-- Таб: Добавить товар -->
+        <div id="addTab" class="tab-content active">
+            <div class="form-section" id="productFormSection">
+                <h3 class="form-title" id="formTitle">Добавить новый товар</h3>
+                <form id="addProductForm">
+                    <div class="form-group">
+                        <label class="form-label">Название товара *</label>
+                        <input type="text" class="form-input" id="productName" 
+                               placeholder="Например: iPhone 15 Pro Max 256GB" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ссылка на изображение *</label>
+                        <input type="url" class="form-input" id="productImage" 
+                               placeholder="https://example.com/image.jpg" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ссылка на Wildberries *</label>
+                        <input type="url" class="form-input" id="productUrl" 
+                               placeholder="https://www.wildberries.ru/catalog/..." required>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary cancel-edit" id="cancelEdit" onclick="cancelEdit()">
+                            ❌ Отменить
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            ✅ Добавить товар
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Таб: Управление товарами -->
+        <div id="manageTab" class="tab-content">
+            <div class="form-section">
+                <h3 class="form-title">Все товары</h3>
+                <div class="products-list" id="productsList">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div>Загрузка товаров...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🔥 ВАШ URL GOOGLE APPS SCRIPT API
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzLhFB5S9SdbAUjEwu-nRNFh-UfptTYfVMh_xq6f16BBINVXl8bCUf4vU5hCvAjZC6apw/exec';
+
+        // Хранилище товаров
+        let products = [];
+        let editingProductId = null;
+
+        // Элементы
+        const addProductForm = document.getElementById('addProductForm');
+        const productsList = document.getElementById('productsList');
+        const totalProducts = document.getElementById('totalProducts');
+        const alertContainer = document.getElementById('alertContainer');
+        const submitBtn = document.getElementById('submitBtn');
+        const cancelEditBtn = document.getElementById('cancelEdit');
+        const formTitle = document.getElementById('formTitle');
+        const productFormSection = document.getElementById('productFormSection');
+
+        // API функции
+        async function apiRequest(action, params = {}) {
+            try {
+                const urlParams = new URLSearchParams({ action, ...params });
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: urlParams
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                return { status: 'error', data: error.toString() };
+            }
+        }
+
+        // Загрузить товары
+        async function loadProducts() {
+            try {
+                productsList.innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div>Загрузка товаров...</div>
+                    </div>
+                `;
+
+                const result = await apiRequest('getProducts');
+                if (result.status === 'success') {
+                    products = result.data;
+                    updateStats();
+                    renderProducts();
+                } else {
+                    throw new Error(result.data);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+                showAlert('Ошибка загрузки товаров: ' + error.message, 'error');
+                productsList.innerHTML = '<div style="text-align: center; padding: 30px; color: #a0aec0;">Ошибка загрузки товаров</div>';
+            }
+        }
+
+        // Показать уведомление
+        function showAlert(message, type = 'success') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertContainer.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Обновить статистику
+        function updateStats() {
+            totalProducts.textContent = products.length;
+        }
+
+        // Показать таб
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`.tab:nth-child(${tabName === 'add' ? 1 : 2})`).classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            if (tabName === 'manage') {
+                loadProducts();
+            }
+        }
+
+        // Добавить или обновить товар
+        async function saveProduct(productData) {
+            try {
+                submitBtn.disabled = true;
+                
+                if (editingProductId) {
+                    submitBtn.textContent = '⏳ Обновляем...';
+                } else {
+                    submitBtn.textContent = '⏳ Добавляем...';
+                }
+
+                const result = await apiRequest('addProduct', {
+                    id: editingProductId || 'product_' + Date.now(),
+                    name: productData.name,
+                    image: productData.image,
+                    url: productData.url
+                });
+                
+                if (result.status === 'success') {
+                    await loadProducts();
+                    
+                    if (editingProductId) {
+                        showAlert('✅ Товар успешно обновлен!');
+                        cancelEdit();
+                    } else {
+                        showAlert('✅ Товар успешно добавлен!');
+                        addProductForm.reset();
+                    }
+                    return true;
+                } else {
+                    throw new Error(result.data);
+                }
+            } catch (error) {
+                console.error('Ошибка сохранения:', error);
+                showAlert('❌ Ошибка при сохранении товара: ' + error.message, 'error');
+                return false;
+            } finally {
+                submitBtn.disabled = false;
+                updateSubmitButton();
+            }
+        }
+
+        // Удалить товар
+        async function deleteProduct(productId) {
+            if (confirm('Удалить этот товар?')) {
+                try {
+                    const result = await apiRequest('deleteProduct', { id: productId });
+                    
+                    if (result.status === 'success') {
+                        await loadProducts();
+                        showAlert('✅ Товар удален');
+                    } else {
+                        throw new Error(result.data);
+                    }
+                } catch (error) {
+                    console.error('Ошибка удаления:', error);
+                    showAlert('❌ Ошибка при удалении товара: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // Редактировать товар - ИСПРАВЛЕННАЯ ФУНКЦИЯ
+        function editProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                // Заполняем форму данными товара
+                document.getElementById('productName').value = product.name;
+                document.getElementById('productImage').value = product.image;
+                document.getElementById('productUrl').value = product.url;
+                
+                // Сохраняем ID редактируемого товара
+                editingProductId = productId;
+                
+                // Обновляем интерфейс для режима редактирования
+                formTitle.textContent = '✏️ Редактировать товар';
+                productFormSection.classList.add('edit-mode');
+                cancelEditBtn.classList.add('show');
+                updateSubmitButton();
+                
+                // Переключаемся на вкладку добавления/редактирования
+                showTab('add');
+                
+                // Прокручиваем к форме
+                document.getElementById('addTab').scrollIntoView({ behavior: 'smooth' });
+                
+                showAlert('Товар готов к редактированию. Измените данные и нажмите "Обновить товар"');
+            }
+        }
+
+        // Отменить редактирование
+        function cancelEdit() {
+            editingProductId = null;
+            addProductForm.reset();
+            formTitle.textContent = 'Добавить новый товар';
+            productFormSection.classList.remove('edit-mode');
+            cancelEditBtn.classList.remove('show');
+            updateSubmitButton();
+            showAlert('Редактирование отменено');
+        }
+
+        // Обновить текст кнопки отправки
+        function updateSubmitButton() {
+            if (editingProductId) {
+                submitBtn.textContent = '✏️ Обновить товар';
+            } else {
+                submitBtn.textContent = '✅ Добавить товар';
+            }
+        }
+
+        // Отрисовать товары
+        function renderProducts() {
+            if (products.length === 0) {
+                productsList.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: #a0aec0;">
+                        <div style="font-size: 40px; margin-bottom: 12px;">📦</div>
+                        <div>Товаров пока нет</div>
+                        <div style="font-size: 12px; margin-top: 6px; opacity: 0.7;">
+                            Добавьте первый товар во вкладке "Добавить товар"
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            productsList.innerHTML = products.map(product => `
+                <div class="product-item">
+                    <div class="product-main">
+                        <img src="${product.image}" alt="${product.name}" class="product-image"
+                             onerror="this.src='https://via.placeholder.com/70x70/e2e8f0/64748b?text=📦'">
+                        <div class="product-info">
+                            <div class="product-name">${product.name}</div>
+                            <a href="${product.url}" target="_blank" class="product-url" onclick="event.stopPropagation()">
+                                ${product.url.length > 50 ? product.url.substring(0, 50) + '...' : product.url}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="product-actions">
+                        <button class="btn btn-edit" onclick="editProduct('${product.id}')">
+                            ✏️ Редактировать
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteProduct('${product.id}')">
+                            🗑️ Удалить
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Обработчик формы
+        addProductForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const productData = {
+                name: document.getElementById('productName').value.trim(),
+                image: document.getElementById('productImage').value.trim(),
+                url: document.getElementById('productUrl').value.trim()
+            };
+
+            // Валидация
+            if (!productData.name || !productData.image || !productData.url) {
+                showAlert('❌ Заполните все поля', 'error');
+                return;
+            }
+
+            await saveProduct(productData);
+        });
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProducts();
+            showAlert('👋 Добро пожаловать в админ-панель!', 'success');
+        });
+    </script>
+</body>
+</html>

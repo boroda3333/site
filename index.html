@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Каталог товаров</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.4;
+            padding: 15px 10px;
+        }
+
+        .app-container {
+            max-width: 100%;
+            min-height: calc(100vh - 30px);
+            background: url('https://storage.imgbly.com/imgbly/eagkovrV0O.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 10px 10px 20px;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 8px;
+            padding: 0 5px;
+        }
+
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 3px;
+            padding: 3px 0;
+            transform: translateY(30px); /* Сдвигаем ТОЛЬКО контейнер с лого */
+        }
+
+        .logo {
+            max-width: 350px;
+            max-height: 150px;
+            object-fit: contain;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 14px 45px 14px 40px;
+            border: 2px solid #cbd5e0;
+            border-radius: 12px;
+            font-size: 15px;
+            background: white;
+            transition: all 0.3s ease;
+            outline: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .search-box:focus {
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-icon img {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .product-card {
+            background: transparent;
+            border-radius: 14px;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 250px;
+        }
+
+        .product-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .product-image-container {
+            position: relative;
+            width: 100%;
+            height: 170px;
+            border-radius: 14px;
+            overflow: hidden;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            margin-bottom: 8px;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .product-card:hover .product-image {
+            transform: scale(1.05);
+        }
+
+        .product-button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 12px 0;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        .product-button:hover {
+            background: #1d4ed8;
+        }
+
+        .product-button:active {
+            transform: scale(0.98);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px 15px;
+            color: #718096;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 14px;
+            margin: 0 10px;
+        }
+
+        .no-results-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px 15px;
+            color: #718096;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 14px;
+            margin: 0 10px;
+        }
+
+        .loading-spinner {
+            width: 25px;
+            height: 25px;
+            border: 2px solid #e2e8f0;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(15px) scale(0.95);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+            
+            .app-container {
+                max-width: 400px;
+                margin: 0 auto;
+            }
+            
+            .products-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .product-card {
+                height: 260px;
+            }
+            
+            .product-image-container {
+                height: 180px;
+            }
+            
+            .logo {
+                max-width: 400px;
+                max-height: 180px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .products-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .product-card {
+                height: 240px;
+            }
+            
+            .product-image-container {
+                height: 160px;
+                margin-bottom: 6px;
+            }
+            
+            .logo {
+                max-width: 300px;
+                max-height: 130px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Шапка -->
+        <div class="header">
+            <div class="logo-container">
+                <img src="https://storage.imgbly.com/imgbly/wwSCCnugVt.png" alt="Логотип" class="logo">
+            </div>
+        </div>
+
+        <!-- Поиск -->
+        <div class="search-container">
+            <div class="search-icon">
+                <!-- ЗАМЕНИТЕ ЭТУ ССЫЛКУ НА ВАШУ PNG КАРТИНКУ -->
+                <img src="https://storage.imgbly.com/imgbly/RLkvDWtDrE.png" alt="Поиск">
+            </div>
+            <input 
+                type="text" 
+                class="search-box" 
+                placeholder="Поиск товаров..." 
+                id="searchInput"
+            >
+        </div>
+
+        <!-- Сетка товаров -->
+        <div class="products-grid" id="productsGrid">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <div>Загрузка товаров...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzLhFB5S9SdbAUjEwu-nRNFh-UfptTYfVMh_xq6f16BBINVXl8bCUf4vU5hCvAjZC6apw/exec';
+
+        // Глобальная переменная для хранения всех товаров
+        let allProducts = [];
+
+        function getDemoProducts() {
+            return [
+                {
+                    id: "1",
+                    name: "Курьерский плащ",
+                    image: "https://via.placeholder.com/300x400/667eea/white?text=Курьерский+плащ",
+                    url: "https://www.wildberries.ru/catalog/123456/detail.aspx"
+                },
+                {
+                    id: "2", 
+                    name: "Выпрямитель профессиональный",
+                    image: "https://via.placeholder.com/300x400/764ba2/white?text=Выпрямитель", 
+                    url: "https://www.wildberries.ru/catalog/789012/detail.aspx"
+                },
+                {
+                    id: "3",
+                    name: "Курьерский пакет", 
+                    image: "https://via.placeholder.com/300x400/48bb78/white?text=Курьерский+пакет",
+                    url: "https://www.wildberries.ru/catalog/345678/detail.aspx"
+                },
+                {
+                    id: "4",
+                    name: "Сохранение безопасности",
+                    image: "https://via.placeholder.com/300x400/ed8936/white?text=Сохранение",
+                    url: "https://www.wildberries.ru/catalog/901234/detail.aspx"
+                }
+            ];
+        }
+
+        async function loadProductsFromAPI() {
+            try {
+                const response = await fetch(`${API_URL}?action=getProducts`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    return result.data;
+                } else {
+                    throw new Error(result.data);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки товаров:', error);
+                return getDemoProducts();
+            }
+        }
+
+        function renderProducts(productsArray) {
+            const grid = document.getElementById('productsGrid');
+            
+            if (!productsArray || productsArray.length === 0) {
+                grid.innerHTML = `
+                    <div class="no-results fade-in">
+                        <div class="no-results-icon">📦</div>
+                        <div>Товаров не найдено</div>
+                        <div style="font-size: 11px; margin-top: 6px; opacity: 0.7;">
+                            Попробуйте изменить запрос поиска
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = productsArray.map(product => `
+                <div class="product-card fade-in">
+                    <div class="product-image-container" onclick="openProduct('${product.url}')">
+                        <img 
+                            src="${product.image}" 
+                            alt="${product.name}"
+                            class="product-image"
+                            onerror="this.src='https://via.placeholder.com/300x400/e2e8f0/64748b?text=📦+Товар'"
+                        >
+                    </div>
+                    <button class="product-button" onclick="openProduct('${product.url}')">Открыть</button>
+                </div>
+            `).join('');
+        }
+
+        function openProduct(url) {
+            if (event && event.currentTarget) {
+                event.currentTarget.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    event.currentTarget.style.transform = '';
+                }, 150);
+            }
+            
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.openLink(url);
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+
+        function searchProducts(products, term) {
+            const searchTerm = term.toLowerCase().trim();
+            
+            if (searchTerm === '') {
+                return products;
+            }
+
+            return products.filter(product => 
+                product.name.toLowerCase().includes(searchTerm)
+            );
+        }
+
+        // Новая функция для обработки поиска
+        function handleSearch() {
+            const searchTerm = document.getElementById('searchInput').value;
+            const filteredProducts = searchProducts(allProducts, searchTerm);
+            renderProducts(filteredProducts);
+        }
+
+        function initTelegramApp() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const tg = window.Telegram.WebApp;
+                
+                tg.expand();
+                tg.setHeaderColor('#ffffff');
+                tg.setBackgroundColor('#ffffff');
+                
+                tg.BackButton.show();
+                tg.BackButton.onClick(() => {
+                    tg.close();
+                });
+                
+                tg.ready();
+            }
+        }
+
+        async function initCatalog() {
+            try {
+                // Загружаем товары и сохраняем в глобальную переменную
+                allProducts = await loadProductsFromAPI();
+                
+                // Показываем все товары
+                renderProducts(allProducts);
+                
+                // Настраиваем поиск
+                document.getElementById('searchInput').addEventListener('input', handleSearch);
+                
+            } catch (error) {
+                console.error('Ошибка инициализации:', error);
+                allProducts = getDemoProducts();
+                renderProducts(allProducts);
+            }
+        }
+
+        async function refreshProducts() {
+            try {
+                const updatedProducts = await loadProductsFromAPI();
+                allProducts = updatedProducts;
+                
+                // Применяем текущий поисковый запрос к обновленным данным
+                handleSearch();
+            } catch (error) {
+                console.error('Ошибка обновления:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initTelegramApp();
+            
+            setTimeout(() => {
+                initCatalog();
+            }, 800);
+
+            setInterval(refreshProducts, 30000);
+            window.addEventListener('focus', refreshProducts);
+        });
+
+        window.addEventListener('error', function(e) {
+            if (window.Telegram && window.Telegram.WebApp) {
+                console.error('Ошибка в Telegram Web App:', e.error);
+            }
+        });
+    </script>
+</body>
+</html>
