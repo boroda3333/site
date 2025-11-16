@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Админ-панель - Управление товарами</title>
     <style>
         * {
@@ -11,9 +11,17 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            --secondary-gradient: linear-gradient(135deg, #667eea, #764ba2);
+            --danger-gradient: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            --success-gradient: linear-gradient(135deg, #4ecdc4, #44a08d);
+            --gray-gradient: linear-gradient(135deg, #a0aec0, #718096);
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: var(--primary-gradient);
             min-height: 100vh;
             color: #333;
             padding: 15px;
@@ -41,7 +49,7 @@
         .login-title {
             font-size: 24px;
             font-weight: 700;
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            background: var(--primary-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 8px;
@@ -96,7 +104,7 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: var(--secondary-gradient);
             color: white;
         }
 
@@ -106,24 +114,26 @@
         }
 
         .btn-logout {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            background: var(--danger-gradient);
             color: white;
             padding: 8px 16px;
             font-size: 13px;
             width: auto;
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 15px;
+            right: 15px;
         }
 
         .admin-container {
-            max-width: 100%;
+            width: 100%;
+            max-width: 1200px;
             background: white;
             border-radius: 16px;
             padding: 20px 15px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.2);
             position: relative;
             display: none;
+            margin: 0 auto;
         }
 
         .header {
@@ -131,12 +141,13 @@
             margin-bottom: 25px;
             padding-bottom: 15px;
             border-bottom: 2px solid #f1f3f4;
+            padding-right: 80px; /* Для кнопки выхода */
         }
 
         .header h1 {
-            font-size: 24px;
+            font-size: clamp(20px, 4vw, 28px);
             font-weight: 700;
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            background: var(--primary-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 8px;
@@ -144,26 +155,30 @@
 
         .header p {
             color: #718096;
-            font-size: 14px;
+            font-size: clamp(12px, 3vw, 14px);
         }
 
         .stats {
             display: flex;
             justify-content: center;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .stat-card {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: var(--secondary-gradient);
             color: white;
             padding: 15px 20px;
             border-radius: 12px;
             text-align: center;
-            min-width: 160px;
+            min-width: 140px;
+            flex: 1;
+            max-width: 200px;
         }
 
         .stat-number {
-            font-size: 28px;
+            font-size: clamp(20px, 5vw, 28px);
             font-weight: bold;
             margin-bottom: 6px;
         }
@@ -181,20 +196,20 @@
         }
 
         .form-title {
-            font-size: 18px;
+            font-size: clamp(16px, 4vw, 18px);
             font-weight: 600;
             margin-bottom: 15px;
             color: #2d3748;
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, #a0aec0, #718096);
+            background: var(--gray-gradient);
             color: white;
             margin-right: 10px;
         }
 
         .btn-danger {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            background: var(--danger-gradient);
             color: white;
             padding: 8px 12px;
             font-size: 13px;
@@ -202,7 +217,7 @@
         }
 
         .btn-edit {
-            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            background: var(--success-gradient);
             color: white;
             padding: 8px 12px;
             font-size: 13px;
@@ -236,11 +251,12 @@
             display: flex;
             width: 100%;
             margin-bottom: 12px;
+            align-items: flex-start;
         }
 
         .product-image {
-            width: 70px;
-            height: 70px;
+            width: 60px;
+            height: 60px;
             border-radius: 6px;
             object-fit: cover;
             margin-right: 15px;
@@ -285,16 +301,18 @@
             background: #f1f3f4;
             border-radius: 10px;
             padding: 4px;
+            flex-wrap: wrap;
         }
 
         .tab {
             flex: 1;
-            padding: 10px;
+            padding: 12px 8px;
             text-align: center;
             cursor: pointer;
             border-radius: 6px;
             transition: all 0.3s ease;
-            font-size: 14px;
+            font-size: clamp(12px, 3vw, 14px);
+            min-width: 120px;
         }
 
         .tab.active {
@@ -361,16 +379,18 @@
         .form-actions {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         .cancel-edit {
             display: none;
-            background: linear-gradient(135deg, #a0aec0, #718096);
+            background: var(--gray-gradient);
             color: white;
+            flex: 1;
         }
 
         .cancel-edit.show {
-            display: block;
+            display: flex;
         }
 
         .edit-mode {
@@ -390,6 +410,271 @@
 
         .login-credentials strong {
             color: #2d3748;
+        }
+
+        /* Адаптация для мобильных устройств */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                align-items: flex-start;
+                min-height: 100vh;
+            }
+
+            .login-container {
+                margin-top: 20px;
+                padding: 25px 20px;
+            }
+
+            .admin-container {
+                padding: 15px 10px;
+                margin-top: 10px;
+            }
+
+            .header {
+                padding-right: 70px;
+                margin-bottom: 20px;
+            }
+
+            .btn-logout {
+                top: 10px;
+                right: 10px;
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .form-section {
+                padding: 15px;
+            }
+
+            .product-item {
+                padding: 12px;
+            }
+
+            .product-main {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .product-image {
+                width: 80px;
+                height: 80px;
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+
+            .product-info {
+                width: 100%;
+            }
+
+            .product-actions {
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .btn-edit, .btn-danger {
+                width: 100%;
+                margin-right: 0;
+            }
+
+            .tabs {
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .tab {
+                min-width: auto;
+            }
+
+            .stats {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .stat-card {
+                max-width: 100%;
+                width: 100%;
+            }
+        }
+
+        /* Адаптация для очень маленьких экранов */
+        @media (max-width: 360px) {
+            .login-container {
+                padding: 20px 15px;
+            }
+
+            .admin-container {
+                padding: 10px 8px;
+            }
+
+            .form-section {
+                padding: 12px;
+            }
+
+            .product-item {
+                padding: 10px;
+            }
+
+            .btn {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+
+            .header h1 {
+                font-size: 18px;
+            }
+
+            .header p {
+                font-size: 11px;
+            }
+        }
+
+        /* Адаптация для планшетов */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .admin-container {
+                max-width: 90%;
+                padding: 25px 20px;
+            }
+
+            .product-item {
+                flex-direction: row;
+                align-items: center;
+            }
+
+            .product-main {
+                flex: 1;
+                margin-bottom: 0;
+                margin-right: 15px;
+            }
+
+            .product-actions {
+                width: auto;
+                flex-direction: column;
+                min-width: 150px;
+            }
+        }
+
+        /* Адаптация для десктопов */
+        @media (min-width: 1025px) {
+            .admin-container {
+                padding: 30px 25px;
+            }
+
+            .products-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                align-items: start;
+            }
+
+            .form-section {
+                margin-bottom: 0;
+            }
+
+            .tab-content.active {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            #addTab.tab-content.active {
+                grid-template-columns: 1fr;
+            }
+
+            #manageTab.tab-content.active {
+                grid-template-columns: 1fr;
+            }
+
+            .product-item {
+                flex-direction: row;
+                align-items: center;
+            }
+
+            .product-main {
+                flex: 1;
+                margin-bottom: 0;
+                margin-right: 20px;
+            }
+
+            .product-actions {
+                width: auto;
+                min-width: 180px;
+            }
+
+            .form-actions {
+                flex-wrap: nowrap;
+            }
+
+            .cancel-edit {
+                flex: 0 0 auto;
+                width: auto;
+                min-width: 120px;
+            }
+        }
+
+        /* Большие экраны */
+        @media (min-width: 1440px) {
+            .admin-container {
+                max-width: 1400px;
+            }
+
+            .products-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Поддержка темной темы */
+        @media (prefers-color-scheme: dark) {
+            .login-container, .admin-container {
+                background: #2d3748;
+                color: #e2e8f0;
+            }
+
+            .form-section {
+                background: #4a5568;
+            }
+
+            .form-input {
+                background: #4a5568;
+                border-color: #718096;
+                color: #e2e8f0;
+            }
+
+            .form-input:focus {
+                border-color: #667eea;
+            }
+
+            .form-label {
+                color: #e2e8f0;
+            }
+
+            .product-item {
+                background: #4a5568;
+                color: #e2e8f0;
+            }
+
+            .product-name {
+                color: #e2e8f0;
+            }
+
+            .tabs {
+                background: #4a5568;
+            }
+
+            .tab.active {
+                background: #667eea;
+                color: white;
+            }
+        }
+
+        /* Поддержка Safe Area для iPhone X и новее */
+        @supports(padding: max(0px)) {
+            body {
+                padding-left: max(10px, env(safe-area-inset-left));
+                padding-right: max(10px, env(safe-area-inset-right));
+                padding-top: max(10px, env(safe-area-inset-top));
+                padding-bottom: max(10px, env(safe-area-inset-bottom));
+            }
         }
     </style>
 </head>
@@ -451,49 +736,52 @@
         <!-- Уведомления -->
         <div id="alertContainer"></div>
 
-        <!-- Таб: Добавить товар -->
-        <div id="addTab" class="tab-content active">
-            <div class="form-section" id="productFormSection">
-                <h3 class="form-title" id="formTitle">Добавить новый товар</h3>
-                <form id="addProductForm">
-                    <div class="form-group">
-                        <label class="form-label">Название товара *</label>
-                        <input type="text" class="form-input" id="productName" 
-                               placeholder="Например: iPhone 15 Pro Max 256GB" required>
-                    </div>
+        <!-- Основной контент -->
+        <div class="products-grid">
+            <!-- Таб: Добавить товар -->
+            <div id="addTab" class="tab-content active">
+                <div class="form-section" id="productFormSection">
+                    <h3 class="form-title" id="formTitle">Добавить новый товар</h3>
+                    <form id="addProductForm">
+                        <div class="form-group">
+                            <label class="form-label">Название товара *</label>
+                            <input type="text" class="form-input" id="productName" 
+                                   placeholder="Например: iPhone 15 Pro Max 256GB" required>
+                        </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Ссылка на изображение *</label>
-                        <input type="url" class="form-input" id="productImage" 
-                               placeholder="https://example.com/image.jpg" required>
-                    </div>
+                        <div class="form-group">
+                            <label class="form-label">Ссылка на изображение *</label>
+                            <input type="url" class="form-input" id="productImage" 
+                                   placeholder="https://example.com/image.jpg" required>
+                        </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Ссылка на Wildberries *</label>
-                        <input type="url" class="form-input" id="productUrl" 
-                               placeholder="https://www.wildberries.ru/catalog/..." required>
-                    </div>
+                        <div class="form-group">
+                            <label class="form-label">Ссылка на Wildberries *</label>
+                            <input type="url" class="form-input" id="productUrl" 
+                                   placeholder="https://www.wildberries.ru/catalog/..." required>
+                        </div>
 
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-secondary cancel-edit" id="cancelEdit" onclick="cancelEdit()">
-                            ❌ Отменить
-                        </button>
-                        <button type="submit" class="btn btn-primary" id="submitBtn">
-                            ✅ Добавить товар
-                        </button>
-                    </div>
-                </form>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary cancel-edit" id="cancelEdit" onclick="cancelEdit()">
+                                ❌ Отменить
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                ✅ Добавить товар
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </div>
 
-        <!-- Таб: Управление товарами -->
-        <div id="manageTab" class="tab-content">
-            <div class="form-section">
-                <h3 class="form-title">Все товары</h3>
-                <div class="products-list" id="productsList">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <div>Загрузка товаров...</div>
+            <!-- Таб: Управление товарами -->
+            <div id="manageTab" class="tab-content">
+                <div class="form-section">
+                    <h3 class="form-title">Все товары</h3>
+                    <div class="products-list" id="productsList">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <div>Загрузка товаров...</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -504,7 +792,7 @@
         // 🔐 ДАННЫЕ ДЛЯ АВТОРИЗАЦИИ
         const ADMIN_CREDENTIALS = {
             login: 'admin',
-            password: 'Wild2024!' // Сгенерированный пароль
+            password: 'Wild2024!'
         };
 
         // 🔥 ВАШ URL GOOGLE APPS SCRIPT API
@@ -735,7 +1023,6 @@
                 updateSubmitButton();
                 
                 showTab('add');
-                document.getElementById('addTab').scrollIntoView({ behavior: 'smooth' });
                 
                 showAlert('Товар готов к редактированию. Измените данные и нажмите "Обновить товар"');
             }
