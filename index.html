@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Каталог товаров</title>
     <style>
+        /* ... весь ваш предыдущий CSS остается без изменений ... */
         * {
             margin: 0;
             padding: 0;
@@ -37,7 +38,6 @@
             position: relative;
         }
 
-        /* Градиент для плавного перехода если фон не доходит до краев */
         .app-container::before {
             content: '';
             position: fixed;
@@ -307,105 +307,6 @@
             }
         }
 
-        /* Адаптация для средних экранов */
-        @media (min-width: 361px) and (max-width: 414px) {
-            .product-card {
-                height: 230px;
-            }
-            
-            .product-image-container {
-                height: 150px;
-            }
-            
-            .logo {
-                max-width: 85%;
-                max-height: 160px;
-            }
-        }
-
-        /* Адаптация для больших экранов и планшетов */
-        @media (min-width: 415px) {
-            .app-container {
-                max-width: 100%;
-                margin: 0 auto;
-                min-height: 100vh;
-            }
-            
-            .products-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-                max-width: 400px;
-                margin: 0 auto 20px;
-            }
-            
-            .search-container {
-                max-width: 400px;
-                margin: 60px auto 20px;
-            }
-            
-            .product-card {
-                height: 240px;
-            }
-            
-            .product-image-container {
-                height: 160px;
-            }
-            
-            .logo {
-                max-width: 350px;
-                max-height: 200px;
-            }
-        }
-
-        /* Адаптация для очень высоких экранов */
-        @media (min-height: 800px) {
-            .logo-container {
-                transform: translateY(40px);
-            }
-            
-            .search-container {
-                margin: 80px 20px 25px;
-            }
-            
-            .product-card {
-                height: 250px;
-            }
-            
-            .product-image-container {
-                height: 170px;
-            }
-            
-            .logo {
-                max-height: 220px;
-            }
-        }
-
-        /* Адаптация для очень широких экранов */
-        @media (min-width: 500px) and (min-height: 1000px) {
-            .products-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 20px;
-                max-width: 450px;
-            }
-            
-            .product-card {
-                height: 280px;
-            }
-            
-            .product-image-container {
-                height: 190px;
-            }
-            
-            .search-container {
-                max-width: 450px;
-            }
-            
-            .logo {
-                max-width: 400px;
-                max-height: 250px;
-            }
-        }
-
         /* Поддержка Safe Area для iPhone X и новее */
         @supports(padding: max(0px)) {
             .app-container {
@@ -435,7 +336,6 @@
             }
         }
 
-        /* Фикс для телеграма */
         .tg-background {
             position: fixed;
             top: 0;
@@ -498,56 +398,68 @@
         function openFortuneApp(event) {
             event.preventDefault();
             
-            // Все возможные варианты ссылок для бота @Yakuponuch_bot
+            // ВСЕ возможные форматы ссылок для Yakuponuch_bot
             const links = [
-                // 1. Прямой deep link (если Mini App настроен)
-                "tg://resolve?domain=Yakuponuch_bot&appname=Yakuponuch&startapp=direct",
-                
-                // 2. Стандартная ссылка на Mini App
+                // 1. Основной формат
                 "https://t.me/Yakuponuch_bot/Yakuponuch",
                 
-                // 3. Ссылка с параметром startapp
+                // 2. С параметром startapp
                 "https://t.me/Yakuponuch_bot?startapp=Yakuponuch",
                 
-                // 4. Обычная ссылка на бота (fallback)
+                // 3. С параметром startapp и значением
+                "https://t.me/Yakuponuch_bot?startapp=Yakuponuch_start",
+                
+                // 4. Deep link с resolve
+                "tg://resolve?domain=Yakuponuch_bot&appname=Yakuponuch",
+                
+                // 5. Deep link с startapp
+                "tg://resolve?domain=Yakuponuch_bot&appname=Yakuponuch&startapp=direct",
+                
+                // 6. Просто ссылка на бота (последний fallback)
                 "https://t.me/Yakuponuch_bot"
             ];
 
+            console.log('Пробуем открыть Fortune App...');
+
             if (window.Telegram && window.Telegram.WebApp) {
-                // Мы в Telegram Web App - пробуем все варианты по очереди
-                tryAllLinks(links);
+                // Мы в Telegram Web App - используем их метод
+                console.log('Используем Telegram WebApp API');
+                tryAllLinksInTelegram(links);
             } else {
                 // Вне Telegram - открываем web версию
-                window.open(links[1], '_blank');
+                console.log('Открываем в браузере');
+                window.open(links[0], '_blank');
             }
         }
 
-        // Функция для последовательной попытки всех ссылок
-        function tryAllLinks(links, index = 0) {
+        // Функция для последовательной попытки всех ссылок в Telegram
+        function tryAllLinksInTelegram(links, index = 0) {
             if (index >= links.length) {
-                // Все ссылки не сработали - показываем сообщение
+                console.log('Все ссылки не сработали');
                 if (window.Telegram && window.Telegram.WebApp) {
                     window.Telegram.WebApp.showAlert(
-                        'Не удалось открыть приложение. Убедитесь, что у бота @Yakuponuch_bot настроен Mini App.'
+                        'Не удалось открыть приложение. Свяжитесь с поддержкой.'
                     );
                 }
                 return;
             }
 
             const currentLink = links[index];
+            console.log(`Пробуем ссылку ${index + 1}: ${currentLink}`);
             
-            if (window.Telegram && window.Telegram.WebApp) {
-                // Используем метод Telegram для открытия ссылки
-                window.Telegram.WebApp.openLink(currentLink);
-                
-                // Проверяем через секунду, сработала ли ссылка
-                setTimeout(() => {
-                    // Если мы все еще в том же приложении, пробуем следующую ссылку
-                    if (document.visibilityState === 'visible') {
-                        tryAllLinks(links, index + 1);
-                    }
-                }, 1000);
-            }
+            // Используем метод Telegram для открытия ссылки
+            window.Telegram.WebApp.openLink(currentLink);
+            
+            // Даем время на открытие (2 секунды)
+            setTimeout(() => {
+                // Если мы все еще видимы, значит ссылка не сработала
+                if (document.visibilityState === 'visible') {
+                    console.log(`Ссылка ${index + 1} не сработала, пробуем следующую`);
+                    tryAllLinksInTelegram(links, index + 1);
+                } else {
+                    console.log(`Ссылка ${index + 1} сработала!`);
+                }
+            }, 2000);
         }
 
         function getDemoProducts() {
