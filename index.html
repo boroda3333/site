@@ -71,6 +71,7 @@
             text-decoration: none;
             z-index: 100;
             box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+            display: inline-block;
         }
 
         .fortune-button:hover {
@@ -454,9 +455,9 @@
     
     <div class="app-container">
         <!-- Кнопка Фортуна -->
-<a href="tg://resolve?domain=Yakuponuch_bot&appname=Yakuponuch&startapp=direct" class="fortune-button">
-    Фортуна
-</a>
+        <a href="https://t.me/Yakuponuch_bot/Yakuponuch" class="fortune-button" onclick="handleFortuneClick(event)">
+            Фортуна
+        </a>
 
         <!-- Шапка -->
         <div class="header">
@@ -493,6 +494,17 @@
         // Глобальная переменная для хранения всех товаров
         let allProducts = [];
 
+        // Функция для открытия приложения Фортуна
+        function handleFortuneClick(event) {
+            // Если мы в Telegram Web App, используем deep link для лучшего UX
+            if (window.Telegram && window.Telegram.WebApp) {
+                event.preventDefault();
+                const telegramLink = "tg://resolve?domain=Yakuponuch_bot&appname=Yakuponuch&startapp=direct";
+                window.Telegram.WebApp.openLink(telegramLink);
+            }
+            // Иначе отработает обычная ссылка https://t.me/Yakuponuch_bot/Yakuponuch
+        }
+
         function getDemoProducts() {
             return [
                 {
@@ -509,7 +521,7 @@
                 },
                 {
                     id: "3",
-                    name: "Курьерский пакet", 
+                    name: "Курьерский пакет", 
                     image: "https://i.imgur.com/9Q9Z8ZJ.jpg",
                     url: "https://www.wildberries.ru/catalog/345678/detail.aspx"
                 },
@@ -666,6 +678,3 @@
     </script>
 </body>
 </html>
-
-
-
