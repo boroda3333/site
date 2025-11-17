@@ -455,7 +455,7 @@
     
     <div class="app-container">
         <!-- Кнопка Фортуна -->
-        <a href="https://t.me/Yakuponuch_bot/Yakuponuch" class="fortune-button" onclick="handleFortuneClick(event)">
+        <a href="#" class="fortune-button" onclick="openFortuneApp(event)">
             Фортуна
         </a>
 
@@ -495,14 +495,59 @@
         let allProducts = [];
 
         // Функция для открытия приложения Фортуна
-        function handleFortuneClick(event) {
-            // Если мы в Telegram Web App, используем deep link для лучшего UX
+        function openFortuneApp(event) {
+            event.preventDefault();
+            
+            // Все возможные варианты ссылок для бота @Yakuponuch_bot
+            const links = [
+                // 1. Прямой deep link (если Mini App настроен)
+                "tg://resolve?domain=Yakuponuch_bot&appname=Yakuponuch&startapp=direct",
+                
+                // 2. Стандартная ссылка на Mini App
+                "https://t.me/Yakuponuch_bot/Yakuponuch",
+                
+                // 3. Ссылка с параметром startapp
+                "https://t.me/Yakuponuch_bot?startapp=Yakuponuch",
+                
+                // 4. Обычная ссылка на бота (fallback)
+                "https://t.me/Yakuponuch_bot"
+            ];
+
             if (window.Telegram && window.Telegram.WebApp) {
-                event.preventDefault();
-                const telegramLink = "tg://resolve?domain=Yakuponuch_bot&appname=Yakuponuch&startapp=direct";
-                window.Telegram.WebApp.openLink(telegramLink);
+                // Мы в Telegram Web App - пробуем все варианты по очереди
+                tryAllLinks(links);
+            } else {
+                // Вне Telegram - открываем web версию
+                window.open(links[1], '_blank');
             }
-            // Иначе отработает обычная ссылка https://t.me/Yakuponuch_bot/Yakuponuch
+        }
+
+        // Функция для последовательной попытки всех ссылок
+        function tryAllLinks(links, index = 0) {
+            if (index >= links.length) {
+                // Все ссылки не сработали - показываем сообщение
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.showAlert(
+                        'Не удалось открыть приложение. Убедитесь, что у бота @Yakuponuch_bot настроен Mini App.'
+                    );
+                }
+                return;
+            }
+
+            const currentLink = links[index];
+            
+            if (window.Telegram && window.Telegram.WebApp) {
+                // Используем метод Telegram для открытия ссылки
+                window.Telegram.WebApp.openLink(currentLink);
+                
+                // Проверяем через секунду, сработала ли ссылка
+                setTimeout(() => {
+                    // Если мы все еще в том же приложении, пробуем следующую ссылку
+                    if (document.visibilityState === 'visible') {
+                        tryAllLinks(links, index + 1);
+                    }
+                }, 1000);
+            }
         }
 
         function getDemoProducts() {
