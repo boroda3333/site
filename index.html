@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Каталог товаров</title>
     <style>
-        /* ... весь ваш предыдущий CSS остается без изменений ... */
         * {
             margin: 0;
             padding: 0;
@@ -398,25 +397,10 @@
         function openFortuneApp(event) {
             event.preventDefault();
             
-            // ВСЕ возможные форматы ссылок для Yakuponuch_bot
+            // Только две ссылки как ты просил
             const links = [
-                // 1. Основной формат
-                "https://t.me/Yakuponuch_bot/Yakuponuch",
-                
-                // 2. С параметром startapp
-                "https://t.me/Yakuponuch_bot?startapp=Yakuponuch",
-                
-                // 3. С параметром startapp и значением
-                "https://t.me/Yakuponuch_bot?startapp=Yakuponuch_start",
-                
-                // 4. Deep link с resolve
                 "tg://resolve?domain=Yakuponuch_bot&appname=Yakuponuch",
-                
-                // 5. Deep link с startapp
-                "tg://resolve?domain=Yakuponuch_bot&appname=Yakuponuch&startapp=direct",
-                
-                // 6. Просто ссылка на бота (последний fallback)
-                "https://t.me/Yakuponuch_bot"
+                "tg://resolve?domain=Yakuponuch_bot&appname=Yakuponuch&startapp=direct"
             ];
 
             console.log('Пробуем открыть Fortune App...');
@@ -424,42 +408,22 @@
             if (window.Telegram && window.Telegram.WebApp) {
                 // Мы в Telegram Web App - используем их метод
                 console.log('Используем Telegram WebApp API');
-                tryAllLinksInTelegram(links);
+                
+                // Сначала пробуем первую ссылку
+                window.Telegram.WebApp.openLink(links[0]);
+                
+                // Если через 1.5 секунды все еще видимы, пробуем вторую
+                setTimeout(() => {
+                    if (document.visibilityState === 'visible') {
+                        console.log('Первая ссылка не сработала, пробуем вторую');
+                        window.Telegram.WebApp.openLink(links[1]);
+                    }
+                }, 1500);
+                
             } else {
-                // Вне Telegram - открываем web версию
-                console.log('Открываем в браузере');
-                window.open(links[0], '_blank');
+                // Вне Telegram - показываем сообщение
+                alert('Эта кнопка работает только в Telegram. Откройте приложение через бота в Telegram.');
             }
-        }
-
-        // Функция для последовательной попытки всех ссылок в Telegram
-        function tryAllLinksInTelegram(links, index = 0) {
-            if (index >= links.length) {
-                console.log('Все ссылки не сработали');
-                if (window.Telegram && window.Telegram.WebApp) {
-                    window.Telegram.WebApp.showAlert(
-                        'Не удалось открыть приложение. Свяжитесь с поддержкой.'
-                    );
-                }
-                return;
-            }
-
-            const currentLink = links[index];
-            console.log(`Пробуем ссылку ${index + 1}: ${currentLink}`);
-            
-            // Используем метод Telegram для открытия ссылки
-            window.Telegram.WebApp.openLink(currentLink);
-            
-            // Даем время на открытие (2 секунды)
-            setTimeout(() => {
-                // Если мы все еще видимы, значит ссылка не сработала
-                if (document.visibilityState === 'visible') {
-                    console.log(`Ссылка ${index + 1} не сработала, пробуем следующую`);
-                    tryAllLinksInTelegram(links, index + 1);
-                } else {
-                    console.log(`Ссылка ${index + 1} сработала!`);
-                }
-            }, 2000);
         }
 
         function getDemoProducts() {
