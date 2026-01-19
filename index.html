@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Каталог товаров</title>
     <style>
-        /* Все существующие стили остаются без изменений */
         * {
             margin: 0;
             padding: 0;
@@ -38,7 +37,8 @@
             position: relative;
         }
 
-        .app-container::before {
+        /* УБИРАЕМ псевдоэлемент с градиентом, который перекрывает фон */
+        /* .app-container::before {
             content: '';
             position: fixed;
             top: 0;
@@ -49,7 +49,7 @@
                 radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.1) 100%);
             pointer-events: none;
             z-index: -1;
-        }
+        } */
 
         /* Кнопка Фортуна */
         .fortune-button {
@@ -339,7 +339,8 @@
             }
         }
 
-        .tg-background {
+        /* УБИРАЕМ дублирующий фон .tg-background */
+        /* .tg-background {
             position: fixed;
             top: 0;
             left: 0;
@@ -349,7 +350,7 @@
                 url('https://i.imgur.com/yFnhT5n.png') no-repeat center center;
             background-size: cover;
             z-index: -2;
-        }
+        } */
 
         /* Стиль для загрузки изображений */
         .image-loading {
@@ -375,8 +376,8 @@
     </style>
 </head>
 <body>
-    <!-- Фон для телеграма -->
-    <div class="tg-background"></div>
+    <!-- УБИРАЕМ дублирующий фон для телеграма -->
+    <!-- <div class="tg-background"></div> -->
     
     <div class="app-container">
         <!-- Кнопка Фортуна -->
