@@ -362,6 +362,16 @@
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
+
+        /* Ленивая загрузка изображений */
+        .lazy-image {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .lazy-image.loaded {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -406,183 +416,117 @@
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbzLhFB5S9SdbAUjEwu-nRNFh-UfptTYfVMh_xq6f16BBINVXl8bCUf4vU5hCvAjZC6apw/exec';
         
-        // Конфигурация кэширования
+        // Упрощенная конфигурация кэширования
         const CACHE_CONFIG = {
-            CACHE_VERSION: 'v1',
-            CACHE_NAME: 'product-images-cache',
-            MAX_IMAGES: 50, // Максимальное количество изображений в кэше
-            CACHE_DURATION: 7 * 24 * 60 * 60 * 1000, // 7 дней в миллисекундах
-            IMAGE_PREFIX: 'cached-image-',
-            METADATA_KEY: 'image-cache-metadata'
+            CACHE_VERSION: 'v2',
+            CACHE_NAME: 'product-images-v2',
+            METADATA_KEY: 'image-cache-v2',
+            MAX_CACHE_SIZE: 50 * 1024 * 1024, // 50MB максимум
+            CACHE_DURATION: 30 * 24 * 60 * 60 * 1000 // 30 дней
         };
 
         // Глобальная переменная для хранения всех товаров
         let allProducts = [];
 
-        // ========== СИСТЕМА КЭШИРОВАНИЯ ИЗОБРАЖЕНИЙ ==========
+        // ========== УПРОЩЕННАЯ СИСТЕМА КЭШИРОВАНИЯ ==========
+
+        // Проверяем, поддерживается ли Cache API
+        const isCacheSupported = 'caches' in window;
 
         // Инициализация кэша
         async function initImageCache() {
+            if (!isCacheSupported) {
+                console.log('Cache API не поддерживается, используем обычную загрузку');
+                return null;
+            }
+            
             try {
-                // Проверяем поддержку Cache API
-                if ('caches' in window) {
-                    const cache = await caches.open(CACHE_CONFIG.CACHE_NAME);
-                    return cache;
+                // Открываем кэш
+                const cache = await caches.open(CACHE_CONFIG.CACHE_NAME);
+                
+                // Очищаем старый кэш, если есть
+                const keys = await caches.keys();
+                for (const key of keys) {
+                    if (key.includes('product-images') && key !== CACHE_CONFIG.CACHE_NAME) {
+                        await caches.delete(key);
+                    }
+                }
+                
+                return cache;
+            } catch (error) {
+                console.warn('Ошибка инициализации кэша:', error);
+                return null;
+            }
+        }
+
+        // Попытка получить изображение из кэша
+        async function getCachedImage(url) {
+            if (!isCacheSupported) return null;
+            
+            try {
+                const cache = await caches.open(CACHE_CONFIG.CACHE_NAME);
+                const cachedResponse = await cache.match(url);
+                
+                if (cachedResponse && cachedResponse.ok) {
+                    return cachedResponse;
                 }
             } catch (error) {
-                console.warn('Cache API не поддерживается или ошибка:', error);
+                console.warn('Ошибка получения из кэша:', error);
             }
+            
             return null;
         }
 
-        // Сохраняем изображение в кэш
+        // Сохраняем изображение в кэш (только если поддерживается)
         async function cacheImage(url) {
+            if (!isCacheSupported) return false;
+            
             try {
-                // Проверяем, не кэшировали ли мы уже это изображение
-                const metadata = getCacheMetadata();
-                const cacheKey = CACHE_CONFIG.IMAGE_PREFIX + btoa(url);
+                // Проверяем, нет ли уже в кэше
+                const existing = await getCachedImage(url);
+                if (existing) return true;
                 
-                if (metadata.cachedImages[cacheKey]) {
-                    return true; // Уже в кэше
-                }
-
-                const cache = await initImageCache();
-                if (!cache) return false;
-
-                // Загружаем и кэшируем изображение
-                const response = await fetch(url, { mode: 'no-cors' });
-                if (response.ok || response.type === 'opaque') {
+                // Загружаем изображение для кэширования
+                const response = await fetch(url, {
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+                
+                if (response.ok) {
+                    const cache = await caches.open(CACHE_CONFIG.CACHE_NAME);
                     await cache.put(url, response.clone());
-                    
-                    // Обновляем метаданные
-                    metadata.cachedImages[cacheKey] = {
-                        url: url,
-                        timestamp: Date.now(),
-                        size: response.headers.get('content-length') || 0
-                    };
-                    
-                    // Ограничиваем количество кэшированных изображений
-                    if (Object.keys(metadata.cachedImages).length > CACHE_CONFIG.MAX_IMAGES) {
-                        cleanupOldCache(metadata);
-                    }
-                    
-                    saveCacheMetadata(metadata);
+                    console.log('Изображение закэшировано:', url);
                     return true;
                 }
             } catch (error) {
-                console.warn('Не удалось закэшировать изображение:', url, error);
+                console.warn('Не удалось закэшировать изображение:', error);
             }
+            
             return false;
         }
 
-        // Получаем изображение из кэша
-        async function getCachedImage(url) {
-            try {
-                const cache = await initImageCache();
-                if (!cache) return null;
-
-                const cachedResponse = await cache.match(url);
-                if (cachedResponse) {
-                    const blob = await cachedResponse.blob();
-                    return URL.createObjectURL(blob);
-                }
-            } catch (error) {
-                console.warn('Ошибка при получении из кэша:', error);
-            }
-            return null;
-        }
-
-        // Кэшируем все изображения из списка товаров (в фоновом режиме)
-        async function cacheAllProductImages(products) {
-            if (!products || !products.length) return;
+        // Фоновое кэширование изображений
+        async function cacheImagesInBackground(images) {
+            if (!isCacheSupported || !images || !images.length) return;
             
-            const cachePromises = products.map(product => 
-                cacheImage(product.image).catch(() => {})
-            );
+            console.log('Начинаем фоновое кэширование изображений...');
             
-            // Запускаем в фоновом режиме, не ждем завершения
-            Promise.allSettled(cachePromises)
-                .then(() => console.log('Фоновое кэширование изображений завершено'))
-                .catch(() => {});
-        }
-
-        // Получаем метаданные кэша
-        function getCacheMetadata() {
-            try {
-                const stored = localStorage.getItem(CACHE_CONFIG.METADATA_KEY);
-                if (stored) {
-                    return JSON.parse(stored);
+            // Кэшируем по одному с задержкой, чтобы не нагружать сеть
+            for (let i = 0; i < images.length; i++) {
+                const imageUrl = images[i];
+                try {
+                    await cacheImage(imageUrl);
+                } catch (error) {
+                    // Игнорируем ошибки при фоновом кэшировании
                 }
-            } catch (error) {
-                console.warn('Ошибка чтения метаданных кэша:', error);
+                
+                // Задержка между запросами
+                if (i < images.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
             }
             
-            return {
-                version: CACHE_CONFIG.CACHE_VERSION,
-                cachedImages: {},
-                lastCleanup: Date.now()
-            };
-        }
-
-        // Сохраняем метаданные кэша
-        function saveCacheMetadata(metadata) {
-            try {
-                localStorage.setItem(CACHE_CONFIG.METADATA_KEY, JSON.stringify(metadata));
-            } catch (error) {
-                console.warn('Ошибка сохранения метаданных кэша:', error);
-            }
-        }
-
-        // Очистка старых записей кэша
-        function cleanupOldCache(metadata) {
-            const entries = Object.entries(metadata.cachedImages);
-            if (entries.length <= CACHE_CONFIG.MAX_IMAGES) return;
-
-            // Сортируем по времени кэширования (старые сначала)
-            entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
-            
-            // Удаляем старые записи
-            const toRemove = entries.slice(0, entries.length - CACHE_CONFIG.MAX_IMAGES);
-            toRemove.forEach(([key]) => {
-                delete metadata.cachedImages[key];
-            });
-
-            metadata.lastCleanup = Date.now();
-        }
-
-        // Очистка устаревшего кэша (старше 7 дней)
-        async function cleanupExpiredCache() {
-            try {
-                const metadata = getCacheMetadata();
-                const now = Date.now();
-                let changed = false;
-
-                for (const [key, data] of Object.entries(metadata.cachedImages)) {
-                    if (now - data.timestamp > CACHE_CONFIG.CACHE_DURATION) {
-                        delete metadata.cachedImages[key];
-                        changed = true;
-                    }
-                }
-
-                if (changed) {
-                    saveCacheMetadata(metadata);
-                    
-                    // Также очищаем Cache API
-                    if ('caches' in window) {
-                        const cache = await caches.open(CACHE_CONFIG.CACHE_NAME);
-                        const requests = await cache.keys();
-                        
-                        for (const request of requests) {
-                            const url = request.url;
-                            if (!metadata.cachedImages[CACHE_CONFIG.IMAGE_PREFIX + btoa(url)]) {
-                                await cache.delete(request);
-                            }
-                        }
-                    }
-                }
-            } catch (error) {
-                console.warn('Ошибка очистки устаревшего кэша:', error);
-            }
+            console.log('Фоновое кэширование завершено');
         }
 
         // ========== ОСНОВНЫЕ ФУНКЦИИ ==========
@@ -660,8 +604,8 @@
             }
         }
 
-        // Рендер товаров с интеллектуальной загрузкой изображений
-        async function renderProducts(productsArray) {
+        // Рендер товаров с ленивой загрузкой
+        function renderProducts(productsArray) {
             const grid = document.getElementById('productsGrid');
             
             if (!productsArray || productsArray.length === 0) {
@@ -677,97 +621,128 @@
                 return;
             }
 
-            // Сначала создаем карточки с плейсхолдерами
-            grid.innerHTML = productsArray.map(product => `
+            // Создаем карточки с data-атрибутами для ленивой загрузки
+            grid.innerHTML = productsArray.map((product, index) => `
                 <div class="product-card fade-in" data-product-id="${product.id}">
-                    <div class="product-image-container image-loading" onclick="openProduct('${product.url}')">
-                        <!-- Изображение будет загружено динамически -->
+                    <div class="product-image-container image-loading">
+                        <img 
+                            class="product-image lazy-image"
+                            data-src="${product.image}"
+                            alt="${product.name}"
+                            loading="lazy"
+                            onerror="this.src='https://i.imgur.com/1Q9Z8ZJ.png'"
+                            onclick="openProduct('${product.url}')"
+                        >
                     </div>
                     <button class="product-button" onclick="openProduct('${product.url}')">Открыть</button>
                 </div>
             `).join('');
 
-            // Затем загружаем изображения с приоритетом видимых элементов
-            await loadImagesWithPriority(productsArray);
+            // Запускаем ленивую загрузку изображений
+            setTimeout(() => {
+                lazyLoadImages();
+                
+                // Добавляем слушатель для скролла
+                window.addEventListener('scroll', lazyLoadImages, { passive: true });
+                window.addEventListener('resize', lazyLoadImages, { passive: true });
+            }, 100);
         }
 
-        // Интеллектуальная загрузка изображений с приоритетом видимых
-        async function loadImagesWithPriority(productsArray) {
+        // Ленивая загрузка изображений
+        function lazyLoadImages() {
+            const lazyImages = document.querySelectorAll('.lazy-image[data-src]');
             const viewportHeight = window.innerHeight;
             
-            for (let i = 0; i < productsArray.length; i++) {
-                const product = productsArray[i];
-                const card = document.querySelector(`[data-product-id="${product.id}"]`);
+            lazyImages.forEach(img => {
+                const rect = img.getBoundingClientRect();
                 
-                if (!card) continue;
-                
-                const rect = card.getBoundingClientRect();
-                const isVisible = rect.top < viewportHeight + 200; // +200px предзагрузка
-                
-                if (isVisible || i < 4) { // Первые 4 или видимые
-                    await loadProductImage(product, card);
-                } else {
-                    // Отложенная загрузка для невидимых
-                    setTimeout(() => loadProductImage(product, card), 300 + i * 100);
+                // Проверяем, находится ли изображение в области просмотра + 100px
+                if (rect.top < viewportHeight + 100 && rect.bottom > -100) {
+                    // Если у изображения есть data-src, загружаем его
+                    if (img.dataset.src) {
+                        loadImageWithCache(img);
+                    }
                 }
-            }
+            });
         }
 
-        // Загрузка изображения товара с кэшированием
-        async function loadProductImage(product, card) {
-            const imageContainer = card.querySelector('.product-image-container');
-            if (!imageContainer) return;
-
+        // Загрузка изображения с использованием кэша
+        async function loadImageWithCache(imgElement) {
+            const imageUrl = imgElement.dataset.src;
+            if (!imageUrl) return;
+            
+            const imageContainer = imgElement.closest('.product-image-container');
+            
             try {
                 // Пробуем получить из кэша
-                let imageUrl = await getCachedImage(product.image);
+                const cachedResponse = await getCachedImage(imageUrl);
                 
-                if (!imageUrl) {
-                    // Если нет в кэше, загружаем напрямую
-                    imageUrl = product.image;
+                if (cachedResponse) {
+                    // Используем кэшированное изображение
+                    const blob = await cachedResponse.blob();
+                    const objectUrl = URL.createObjectURL(blob);
+                    imgElement.src = objectUrl;
                     
-                    // И запускаем фоновое кэширование для следующего раза
-                    cacheImage(product.image).catch(() => {});
+                    // Освобождаем объект URL после загрузки
+                    imgElement.onload = () => {
+                        URL.revokeObjectURL(objectUrl);
+                        imgElement.classList.add('loaded');
+                        imageContainer.classList.remove('image-loading');
+                    };
+                    
+                    imgElement.onerror = () => {
+                        URL.revokeObjectURL(objectUrl);
+                        loadImageDirectly(imgElement, imageContainer, imageUrl);
+                    };
+                    
+                } else {
+                    // Загружаем напрямую
+                    loadImageDirectly(imgElement, imageContainer, imageUrl);
+                    
+                    // Пытаемся закэшировать для будущего использования
+                    setTimeout(() => cacheImage(imageUrl), 1000);
                 }
-
-                const img = new Image();
-                img.onload = () => {
-                    imageContainer.classList.remove('image-loading');
-                    imageContainer.innerHTML = '';
-                    const imgElement = document.createElement('img');
-                    imgElement.src = imageUrl;
-                    imgElement.alt = product.name;
-                    imgElement.className = 'product-image';
-                    imgElement.onclick = () => openProduct(product.url);
-                    imageContainer.appendChild(imgElement);
-                };
-                
-                img.onerror = () => {
-                    // Если изображение не загрузилось, показываем заглушку
-                    imageContainer.classList.remove('image-loading');
-                    imageContainer.innerHTML = '';
-                    const imgElement = document.createElement('img');
-                    imgElement.src = 'https://i.imgur.com/1Q9Z8ZJ.png';
-                    imgElement.alt = product.name;
-                    imgElement.className = 'product-image';
-                    imgElement.onclick = () => openProduct(product.url);
-                    imageContainer.appendChild(imgElement);
-                };
-                
-                img.src = imageUrl;
                 
             } catch (error) {
                 console.warn('Ошибка загрузки изображения:', error);
-                imageContainer.classList.remove('image-loading');
+                loadImageDirectly(imgElement, imageContainer, imageUrl);
             }
+            
+            // Убираем data-src, чтобы не загружать повторно
+            delete imgElement.dataset.src;
+        }
+
+        // Прямая загрузка изображения (без кэша)
+        function loadImageDirectly(imgElement, container, imageUrl) {
+            imgElement.src = imageUrl;
+            
+            imgElement.onload = () => {
+                imgElement.classList.add('loaded');
+                if (container) {
+                    container.classList.remove('image-loading');
+                }
+            };
+            
+            imgElement.onerror = () => {
+                imgElement.src = 'https://i.imgur.com/1Q9Z8ZJ.png';
+                imgElement.classList.add('loaded');
+                if (container) {
+                    container.classList.remove('image-loading');
+                }
+            };
         }
 
         // Открытие продукта
         function openProduct(url) {
-            if (event && event.currentTarget) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            if (event.currentTarget) {
                 event.currentTarget.style.transform = 'scale(0.95)';
                 setTimeout(() => {
-                    event.currentTarget.style.transform = '';
+                    if (event.currentTarget) {
+                        event.currentTarget.style.transform = '';
+                    }
                 }, 150);
             }
             
@@ -816,27 +791,19 @@
                 // Загружаем товары
                 allProducts = await loadProductsFromAPI();
                 
-                // Кэшируем изображения в фоне для будущих запусков
-                cacheAllProductImages(allProducts);
-                
-                // Очищаем устаревший кэш
-                cleanupExpiredCache();
-                
                 // Рендерим товары
                 renderProducts(allProducts);
                 
+                // Запускаем фоновое кэширование изображений
+                if (allProducts && allProducts.length > 0) {
+                    const imageUrls = allProducts.map(p => p.image).filter(url => url);
+                    setTimeout(() => {
+                        cacheImagesInBackground(imageUrls);
+                    }, 2000);
+                }
+                
                 // Настраиваем поиск
                 document.getElementById('searchInput').addEventListener('input', handleSearch);
-                
-                // Предзагрузка следующих изображений при скролле
-                let isLoading = false;
-                window.addEventListener('scroll', async () => {
-                    if (!isLoading) {
-                        isLoading = true;
-                        await loadVisibleImages();
-                        isLoading = false;
-                    }
-                }, { passive: true });
                 
             } catch (error) {
                 console.error('Ошибка инициализации:', error);
@@ -845,34 +812,11 @@
             }
         }
 
-        // Загрузка видимых изображений при скролле
-        async function loadVisibleImages() {
-            const cards = document.querySelectorAll('.product-card');
-            const viewportHeight = window.innerHeight;
-            
-            for (const card of cards) {
-                const rect = card.getBoundingClientRect();
-                const isVisible = rect.top < viewportHeight + 500 && rect.bottom > -100;
-                
-                if (isVisible) {
-                    const imageContainer = card.querySelector('.product-image-container');
-                    if (imageContainer && imageContainer.classList.contains('image-loading')) {
-                        const productId = card.dataset.productId;
-                        const product = allProducts.find(p => p.id === productId);
-                        if (product) {
-                            await loadProductImage(product, card);
-                        }
-                    }
-                }
-            }
-        }
-
         // Обновление товаров
         async function refreshProducts() {
             try {
                 const updatedProducts = await loadProductsFromAPI();
                 allProducts = updatedProducts;
-                cacheAllProductImages(updatedProducts);
                 handleSearch();
             } catch (error) {
                 console.error('Ошибка обновления:', error);
@@ -880,13 +824,15 @@
         }
 
         // Инициализация при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             initTelegramApp();
             
-            // Инициализируем кэш и загружаем каталог
-            setTimeout(async () => {
-                await initImageCache();
-                await initCatalog();
+            // Инициализируем кэш
+            await initImageCache();
+            
+            // Загружаем каталог
+            setTimeout(() => {
+                initCatalog();
             }, 300);
 
             // Обновление каждые 30 секунд
