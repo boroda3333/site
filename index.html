@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Каталог товаров</title>
     <style>
+        /* Все существующие стили остаются без изменений */
         * {
             margin: 0;
             padding: 0;
@@ -163,7 +164,7 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            height: 280px; /* Увеличили высоту карточки */
+            height: 280px;
         }
 
         .product-card:active {
@@ -173,7 +174,7 @@
         .product-image-container {
             position: relative;
             width: 100%;
-            height: 200px; /* Увеличили высоту контейнера для изображения */
+            height: 200px;
             border-radius: 14px;
             overflow: hidden;
             background: transparent;
@@ -186,12 +187,12 @@
 
         .product-image {
             width: 100%;
-            height: 100%; /* Занимает всю высоту контейнера */
+            height: 100%;
             object-fit: cover;
             border-radius: 14px;
             transition: all 0.3s ease;
-            aspect-ratio: 3/4; /* Фиксируем соотношение 900x1200 = 3:4 */
-            object-position: center top; /* Выравнивание как в ВБ */
+            aspect-ratio: 3/4;
+            object-position: center top;
         }
 
         .product-card:active .product-image {
@@ -213,7 +214,7 @@
             letter-spacing: 0.5px;
             width: 100%;
             flex-shrink: 0;
-            margin-top: 8px; /* Добавили отступ сверху */
+            margin-top: 8px;
         }
 
         .product-button:active {
@@ -291,11 +292,11 @@
             }
             
             .product-card {
-                height: 260px; /* Немного уменьшили для маленьких экранов */
+                height: 260px;
             }
             
             .product-image-container {
-                height: 180px; /* Соответствующая высота для маленьких экранов */
+                height: 180px;
                 margin-bottom: 6px;
             }
             
@@ -349,6 +350,18 @@
             background-size: cover;
             z-index: -2;
         }
+
+        /* Стиль для загрузки изображений */
+        .image-loading {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
     </style>
 </head>
 <body>
@@ -392,15 +405,192 @@
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbzLhFB5S9SdbAUjEwu-nRNFh-UfptTYfVMh_xq6f16BBINVXl8bCUf4vU5hCvAjZC6apw/exec';
+        
+        // Конфигурация кэширования
+        const CACHE_CONFIG = {
+            CACHE_VERSION: 'v1',
+            CACHE_NAME: 'product-images-cache',
+            MAX_IMAGES: 50, // Максимальное количество изображений в кэше
+            CACHE_DURATION: 7 * 24 * 60 * 60 * 1000, // 7 дней в миллисекундах
+            IMAGE_PREFIX: 'cached-image-',
+            METADATA_KEY: 'image-cache-metadata'
+        };
 
         // Глобальная переменная для хранения всех товаров
         let allProducts = [];
+
+        // ========== СИСТЕМА КЭШИРОВАНИЯ ИЗОБРАЖЕНИЙ ==========
+
+        // Инициализация кэша
+        async function initImageCache() {
+            try {
+                // Проверяем поддержку Cache API
+                if ('caches' in window) {
+                    const cache = await caches.open(CACHE_CONFIG.CACHE_NAME);
+                    return cache;
+                }
+            } catch (error) {
+                console.warn('Cache API не поддерживается или ошибка:', error);
+            }
+            return null;
+        }
+
+        // Сохраняем изображение в кэш
+        async function cacheImage(url) {
+            try {
+                // Проверяем, не кэшировали ли мы уже это изображение
+                const metadata = getCacheMetadata();
+                const cacheKey = CACHE_CONFIG.IMAGE_PREFIX + btoa(url);
+                
+                if (metadata.cachedImages[cacheKey]) {
+                    return true; // Уже в кэше
+                }
+
+                const cache = await initImageCache();
+                if (!cache) return false;
+
+                // Загружаем и кэшируем изображение
+                const response = await fetch(url, { mode: 'no-cors' });
+                if (response.ok || response.type === 'opaque') {
+                    await cache.put(url, response.clone());
+                    
+                    // Обновляем метаданные
+                    metadata.cachedImages[cacheKey] = {
+                        url: url,
+                        timestamp: Date.now(),
+                        size: response.headers.get('content-length') || 0
+                    };
+                    
+                    // Ограничиваем количество кэшированных изображений
+                    if (Object.keys(metadata.cachedImages).length > CACHE_CONFIG.MAX_IMAGES) {
+                        cleanupOldCache(metadata);
+                    }
+                    
+                    saveCacheMetadata(metadata);
+                    return true;
+                }
+            } catch (error) {
+                console.warn('Не удалось закэшировать изображение:', url, error);
+            }
+            return false;
+        }
+
+        // Получаем изображение из кэша
+        async function getCachedImage(url) {
+            try {
+                const cache = await initImageCache();
+                if (!cache) return null;
+
+                const cachedResponse = await cache.match(url);
+                if (cachedResponse) {
+                    const blob = await cachedResponse.blob();
+                    return URL.createObjectURL(blob);
+                }
+            } catch (error) {
+                console.warn('Ошибка при получении из кэша:', error);
+            }
+            return null;
+        }
+
+        // Кэшируем все изображения из списка товаров (в фоновом режиме)
+        async function cacheAllProductImages(products) {
+            if (!products || !products.length) return;
+            
+            const cachePromises = products.map(product => 
+                cacheImage(product.image).catch(() => {})
+            );
+            
+            // Запускаем в фоновом режиме, не ждем завершения
+            Promise.allSettled(cachePromises)
+                .then(() => console.log('Фоновое кэширование изображений завершено'))
+                .catch(() => {});
+        }
+
+        // Получаем метаданные кэша
+        function getCacheMetadata() {
+            try {
+                const stored = localStorage.getItem(CACHE_CONFIG.METADATA_KEY);
+                if (stored) {
+                    return JSON.parse(stored);
+                }
+            } catch (error) {
+                console.warn('Ошибка чтения метаданных кэша:', error);
+            }
+            
+            return {
+                version: CACHE_CONFIG.CACHE_VERSION,
+                cachedImages: {},
+                lastCleanup: Date.now()
+            };
+        }
+
+        // Сохраняем метаданные кэша
+        function saveCacheMetadata(metadata) {
+            try {
+                localStorage.setItem(CACHE_CONFIG.METADATA_KEY, JSON.stringify(metadata));
+            } catch (error) {
+                console.warn('Ошибка сохранения метаданных кэша:', error);
+            }
+        }
+
+        // Очистка старых записей кэша
+        function cleanupOldCache(metadata) {
+            const entries = Object.entries(metadata.cachedImages);
+            if (entries.length <= CACHE_CONFIG.MAX_IMAGES) return;
+
+            // Сортируем по времени кэширования (старые сначала)
+            entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+            
+            // Удаляем старые записи
+            const toRemove = entries.slice(0, entries.length - CACHE_CONFIG.MAX_IMAGES);
+            toRemove.forEach(([key]) => {
+                delete metadata.cachedImages[key];
+            });
+
+            metadata.lastCleanup = Date.now();
+        }
+
+        // Очистка устаревшего кэша (старше 7 дней)
+        async function cleanupExpiredCache() {
+            try {
+                const metadata = getCacheMetadata();
+                const now = Date.now();
+                let changed = false;
+
+                for (const [key, data] of Object.entries(metadata.cachedImages)) {
+                    if (now - data.timestamp > CACHE_CONFIG.CACHE_DURATION) {
+                        delete metadata.cachedImages[key];
+                        changed = true;
+                    }
+                }
+
+                if (changed) {
+                    saveCacheMetadata(metadata);
+                    
+                    // Также очищаем Cache API
+                    if ('caches' in window) {
+                        const cache = await caches.open(CACHE_CONFIG.CACHE_NAME);
+                        const requests = await cache.keys();
+                        
+                        for (const request of requests) {
+                            const url = request.url;
+                            if (!metadata.cachedImages[CACHE_CONFIG.IMAGE_PREFIX + btoa(url)]) {
+                                await cache.delete(request);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn('Ошибка очистки устаревшего кэша:', error);
+            }
+        }
+
+        // ========== ОСНОВНЫЕ ФУНКЦИИ ==========
 
         // Функция для открытия приложения Фортуна
         function openFortuneApp(event) {
             event.preventDefault();
             
-            // Только две ссылки как ты просил
             const links = [
                 "tg://resolve?domain=Yakuponuch_bot&appname=Yakuponuch",
                 "tg://resolve?domain=Yakuponuch_bot&appname=Yakuponuch&startapp=direct"
@@ -409,26 +599,21 @@
             console.log('Пробуем открыть Fortune App...');
 
             if (window.Telegram && window.Telegram.WebApp) {
-                // Мы в Telegram Web App - используем их метод
                 console.log('Используем Telegram WebApp API');
-                
-                // Сначала пробуем первую ссылку
                 window.Telegram.WebApp.openLink(links[0]);
                 
-                // Если через 1.5 секунды все еще видимы, пробуем вторую
                 setTimeout(() => {
                     if (document.visibilityState === 'visible') {
                         console.log('Первая ссылка не сработала, пробуем вторую');
                         window.Telegram.WebApp.openLink(links[1]);
                     }
                 }, 1500);
-                
             } else {
-                // Вне Telegram - показываем сообщение
                 alert('Эта кнопка работает только в Telegram. Откройте приложение через бота в Telegram.');
             }
         }
 
+        // Загрузка демо-товаров
         function getDemoProducts() {
             return [
                 {
@@ -458,6 +643,7 @@
             ];
         }
 
+        // Загрузка товаров с API
         async function loadProductsFromAPI() {
             try {
                 const response = await fetch(`${API_URL}?action=getProducts`);
@@ -474,7 +660,8 @@
             }
         }
 
-        function renderProducts(productsArray) {
+        // Рендер товаров с интеллектуальной загрузкой изображений
+        async function renderProducts(productsArray) {
             const grid = document.getElementById('productsGrid');
             
             if (!productsArray || productsArray.length === 0) {
@@ -490,21 +677,92 @@
                 return;
             }
 
+            // Сначала создаем карточки с плейсхолдерами
             grid.innerHTML = productsArray.map(product => `
-                <div class="product-card fade-in">
-                    <div class="product-image-container" onclick="openProduct('${product.url}')">
-                        <img 
-                            src="${product.image}" 
-                            alt="${product.name}"
-                            class="product-image"
-                            onerror="this.src='https://i.imgur.com/1Q9Z8ZJ.png'"
-                        >
+                <div class="product-card fade-in" data-product-id="${product.id}">
+                    <div class="product-image-container image-loading" onclick="openProduct('${product.url}')">
+                        <!-- Изображение будет загружено динамически -->
                     </div>
                     <button class="product-button" onclick="openProduct('${product.url}')">Открыть</button>
                 </div>
             `).join('');
+
+            // Затем загружаем изображения с приоритетом видимых элементов
+            await loadImagesWithPriority(productsArray);
         }
 
+        // Интеллектуальная загрузка изображений с приоритетом видимых
+        async function loadImagesWithPriority(productsArray) {
+            const viewportHeight = window.innerHeight;
+            
+            for (let i = 0; i < productsArray.length; i++) {
+                const product = productsArray[i];
+                const card = document.querySelector(`[data-product-id="${product.id}"]`);
+                
+                if (!card) continue;
+                
+                const rect = card.getBoundingClientRect();
+                const isVisible = rect.top < viewportHeight + 200; // +200px предзагрузка
+                
+                if (isVisible || i < 4) { // Первые 4 или видимые
+                    await loadProductImage(product, card);
+                } else {
+                    // Отложенная загрузка для невидимых
+                    setTimeout(() => loadProductImage(product, card), 300 + i * 100);
+                }
+            }
+        }
+
+        // Загрузка изображения товара с кэшированием
+        async function loadProductImage(product, card) {
+            const imageContainer = card.querySelector('.product-image-container');
+            if (!imageContainer) return;
+
+            try {
+                // Пробуем получить из кэша
+                let imageUrl = await getCachedImage(product.image);
+                
+                if (!imageUrl) {
+                    // Если нет в кэше, загружаем напрямую
+                    imageUrl = product.image;
+                    
+                    // И запускаем фоновое кэширование для следующего раза
+                    cacheImage(product.image).catch(() => {});
+                }
+
+                const img = new Image();
+                img.onload = () => {
+                    imageContainer.classList.remove('image-loading');
+                    imageContainer.innerHTML = '';
+                    const imgElement = document.createElement('img');
+                    imgElement.src = imageUrl;
+                    imgElement.alt = product.name;
+                    imgElement.className = 'product-image';
+                    imgElement.onclick = () => openProduct(product.url);
+                    imageContainer.appendChild(imgElement);
+                };
+                
+                img.onerror = () => {
+                    // Если изображение не загрузилось, показываем заглушку
+                    imageContainer.classList.remove('image-loading');
+                    imageContainer.innerHTML = '';
+                    const imgElement = document.createElement('img');
+                    imgElement.src = 'https://i.imgur.com/1Q9Z8ZJ.png';
+                    imgElement.alt = product.name;
+                    imgElement.className = 'product-image';
+                    imgElement.onclick = () => openProduct(product.url);
+                    imageContainer.appendChild(imgElement);
+                };
+                
+                img.src = imageUrl;
+                
+            } catch (error) {
+                console.warn('Ошибка загрузки изображения:', error);
+                imageContainer.classList.remove('image-loading');
+            }
+        }
+
+        // Открытие продукта
         function openProduct(url) {
             if (event && event.currentTarget) {
                 event.currentTarget.style.transform = 'scale(0.95)';
@@ -520,6 +778,7 @@
             }
         }
 
+        // Поиск товаров
         function searchProducts(products, term) {
             const searchTerm = term.toLowerCase().trim();
             
@@ -532,39 +791,52 @@
             );
         }
 
+        // Обработка поиска
         function handleSearch() {
             const searchTerm = document.getElementById('searchInput').value;
             const filteredProducts = searchProducts(allProducts, searchTerm);
             renderProducts(filteredProducts);
         }
 
+        // Инициализация Telegram App
         function initTelegramApp() {
             if (window.Telegram && window.Telegram.WebApp) {
                 const tg = window.Telegram.WebApp;
-                
-                // Расширяем на весь экран
                 tg.expand();
-                
-                // Устанавливаем прозрачный фон для телеграма
                 tg.setBackgroundColor('#00000000');
-                
-                // Настраиваем кнопку назад
                 tg.BackButton.show();
-                tg.BackButton.onClick(() => {
-                    tg.close();
-                });
-                
-                // Говорим Telegram, что приложение готово
+                tg.BackButton.onClick(() => tg.close());
                 tg.ready();
             }
         }
 
+        // Основная инициализация каталога
         async function initCatalog() {
             try {
+                // Загружаем товары
                 allProducts = await loadProductsFromAPI();
+                
+                // Кэшируем изображения в фоне для будущих запусков
+                cacheAllProductImages(allProducts);
+                
+                // Очищаем устаревший кэш
+                cleanupExpiredCache();
+                
+                // Рендерим товары
                 renderProducts(allProducts);
                 
+                // Настраиваем поиск
                 document.getElementById('searchInput').addEventListener('input', handleSearch);
+                
+                // Предзагрузка следующих изображений при скролле
+                let isLoading = false;
+                window.addEventListener('scroll', async () => {
+                    if (!isLoading) {
+                        isLoading = true;
+                        await loadVisibleImages();
+                        isLoading = false;
+                    }
+                }, { passive: true });
                 
             } catch (error) {
                 console.error('Ошибка инициализации:', error);
@@ -573,27 +845,56 @@
             }
         }
 
+        // Загрузка видимых изображений при скролле
+        async function loadVisibleImages() {
+            const cards = document.querySelectorAll('.product-card');
+            const viewportHeight = window.innerHeight;
+            
+            for (const card of cards) {
+                const rect = card.getBoundingClientRect();
+                const isVisible = rect.top < viewportHeight + 500 && rect.bottom > -100;
+                
+                if (isVisible) {
+                    const imageContainer = card.querySelector('.product-image-container');
+                    if (imageContainer && imageContainer.classList.contains('image-loading')) {
+                        const productId = card.dataset.productId;
+                        const product = allProducts.find(p => p.id === productId);
+                        if (product) {
+                            await loadProductImage(product, card);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Обновление товаров
         async function refreshProducts() {
             try {
                 const updatedProducts = await loadProductsFromAPI();
                 allProducts = updatedProducts;
+                cacheAllProductImages(updatedProducts);
                 handleSearch();
             } catch (error) {
                 console.error('Ошибка обновления:', error);
             }
         }
 
+        // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
             initTelegramApp();
             
-            setTimeout(() => {
-                initCatalog();
-            }, 800);
+            // Инициализируем кэш и загружаем каталог
+            setTimeout(async () => {
+                await initImageCache();
+                await initCatalog();
+            }, 300);
 
+            // Обновление каждые 30 секунд
             setInterval(refreshProducts, 30000);
             window.addEventListener('focus', refreshProducts);
         });
 
+        // Обработка ошибок
         window.addEventListener('error', function(e) {
             if (window.Telegram && window.Telegram.WebApp) {
                 console.error('Ошибка в Telegram Web App:', e.error);
