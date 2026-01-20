@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Каталог товаров</title>
+    <!-- Подключаем шрифт Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
         }
 
         html, body {
@@ -25,6 +27,8 @@
             padding: 0;
             margin: 0;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         .app-container {
@@ -35,99 +39,58 @@
             background-size: cover;
             padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
             position: relative;
-        }
-
-        /* УБИРАЕМ псевдоэлемент с градиентом, который перекрывает фон */
-        /* .app-container::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.1) 100%);
-            pointer-events: none;
-            z-index: -1;
-        } */
-
-        /* Кнопка Фортуна */
-        .fortune-button {
-            position: absolute;
-            top: max(15px, env(safe-area-inset-top));
-            right: 15px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 8px 12px;
-            font-size: 12px;
-            font-weight: 600;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            text-decoration: none;
-            z-index: 100;
-            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
-            display: inline-block;
-        }
-
-        .fortune-button:hover {
-            background: #1d4ed8;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
-        }
-
-        .fortune-button:active {
-            transform: scale(0.95);
+            touch-action: manipulation;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 8px;
-            padding: max(15px, env(safe-area-inset-top)) 10px 0;
+            margin-bottom: 0;
+            padding: max(5px, env(safe-area-inset-top)) 10px 0;
         }
 
         .logo-container {
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-bottom: 3px;
-            padding: 3px 0;
-            transform: translateY(90px);
+            margin-bottom: 0;
+            padding: 0;
+            width: 100%;
         }
 
         .logo {
-            max-width: 100%;
-            max-height: 280px;
+            max-width: calc(100% - 40px); /* Одинаковая ширина с поиском и товарами */
+            max-height: 150px; /* Увеличил высоту */
             width: auto;
             height: auto;
             object-fit: contain;
+            margin: 0 auto; /* Центрируем по горизонтали */
         }
 
         .search-container {
             position: relative;
-            margin: 60px 20px 20px;
+            margin: 10px 20px 10px;
         }
 
         .search-box {
             width: 100%;
-            padding: 16px 45px 16px 45px;
+            padding: 16px 45px 16px 45px; /* Увеличил padding сверху и снизу */
             border: 2px solid #cbd5e0;
-            border-radius: 12px;
+            border-radius: 10px;
             font-size: 16px;
             background: white;
             transition: all 0.3s ease;
             outline: none;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            -webkit-appearance: none;
+            appearance: none;
+            font-family: 'Montserrat', sans-serif; /* Добавил шрифт Montserrat */
+            font-weight: 400; /* Regular weight */
         }
 
         .search-box:focus {
-            border-color: #667eea;
+            border-color: #805ad5;
             background: white;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            box-shadow: 0 4px 12px rgba(128, 90, 213, 0.15);
         }
 
         .search-icon {
@@ -144,19 +107,34 @@
             width: 20px;
             height: 20px;
             object-fit: contain;
+            animation: searchPulse 2s infinite ease-in-out;
+            transform-origin: center;
+            will-change: transform;
+        }
+
+        @keyframes searchPulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(0.9);
+            }
+            100% {
+                transform: scale(1);
+            }
         }
 
         .products-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin: 0 20px 20px;
-            padding-bottom: max(20px, env(safe-area-inset-bottom));
+            gap: 15px;
+            margin: 0 20px 15px;
+            padding-bottom: max(15px, env(safe-area-inset-bottom));
         }
 
         .product-card {
             background: transparent;
-            border-radius: 14px;
+            border-radius: 10px;
             padding: 0;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -164,7 +142,9 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            height: 280px;
+            height: 270px;
+            touch-action: manipulation;
+            margin-bottom: 0;
         }
 
         .product-card:active {
@@ -174,25 +154,27 @@
         .product-image-container {
             position: relative;
             width: 100%;
-            height: 200px;
-            border-radius: 14px;
+            height: 190px;
+            border-radius: 10px;
             overflow: hidden;
             background: transparent;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-grow: 1;
-            margin-bottom: 8px;
+            margin-bottom: 1px;
         }
 
         .product-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 14px;
+            border-radius: 10px;
             transition: all 0.3s ease;
             aspect-ratio: 3/4;
             object-position: center top;
+            -webkit-user-drag: none;
+            user-select: none;
         }
 
         .product-card:active .product-image {
@@ -200,60 +182,109 @@
         }
 
         .product-button {
-            background: #2563eb;
+            background: url('https://i.imgur.com/vZ2i3Wn.png') no-repeat center center;
+            background-size: 100% 100%; /* Растягиваем на весь размер кнопки */
             color: white;
             border: none;
-            border-radius: 14px;
-            padding: 12px 0;
-            font-size: 14px;
-            font-weight: 600;
+            border-radius: 12px; /* Немного увеличим радиус для соответствия картинке */
+            padding: 10px 0;
+            font-size: 16px;
+            font-weight: 700; /* Montserrat ExtraBold */
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             width: 100%;
             flex-shrink: 0;
-            margin-top: 8px;
+            margin-top: 1px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+            user-select: none;
+            outline: none;
+            transform-origin: center;
+            will-change: transform;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            height: 45px; /* Фиксированная высота для кнопки */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); /* Добавляем тень для лучшей читаемости */
         }
 
-        .product-button:active {
-            background: #1d4ed8;
-            transform: scale(0.98);
+        .product-button:active,
+        .product-button.pressed {
+            animation: buttonPress 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            background-size: 105% 105%; /* Легкое увеличение фона при нажатии */
+            opacity: 0.9; /* Легкое затемнение при нажатии */
+        }
+
+        @keyframes buttonPress {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(0.95);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Анимация ripple-эффекта */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
         }
 
         .no-results {
             text-align: center;
-            padding: 40px 20px;
+            padding: 30px 20px;
             color: #718096;
             background: rgba(255, 255, 255, 0.9);
-            border-radius: 14px;
+            border-radius: 10px;
             margin: 0 20px;
+            font-family: 'Montserrat', sans-serif;
         }
 
         .no-results-icon {
-            font-size: 36px;
-            margin-bottom: 10px;
+            font-size: 30px;
+            margin-bottom: 8px;
             opacity: 0.5;
         }
 
         .loading {
             text-align: center;
-            padding: 40px 20px;
+            padding: 30px 20px;
             color: #718096;
             background: rgba(255, 255, 255, 0.9);
-            border-radius: 14px;
+            border-radius: 10px;
             margin: 0 20px;
+            font-family: 'Montserrat', sans-serif;
         }
 
         .loading-spinner {
-            width: 30px;
-            height: 30px;
+            width: 25px;
+            height: 25px;
             border: 3px solid #e2e8f0;
-            border-top: 3px solid #667eea;
+            border-top: 3px solid #805ad5;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+            margin: 0 auto 12px;
         }
 
         @keyframes spin {
@@ -278,35 +309,68 @@
 
         /* Адаптация для очень маленьких экранов */
         @media (max-width: 360px) {
-            .fortune-button {
-                top: max(10px, env(safe-area-inset-top));
-                right: 10px;
-                padding: 6px 10px;
-                font-size: 11px;
-            }
-            
             .products-grid {
                 grid-template-columns: 1fr;
-                gap: 10px;
-                margin: 0 15px 15px;
+                gap: 12px;
+                margin: 0 15px 12px;
             }
             
             .product-card {
-                height: 260px;
+                height: 250px;
             }
             
             .product-image-container {
-                height: 180px;
-                margin-bottom: 6px;
+                height: 170px;
+                margin-bottom: 0;
             }
             
             .logo {
-                max-width: 85%;
-                max-height: 150px;
+                max-width: calc(100% - 30px); /* Адаптивная ширина для мобильных */
+                max-height: 180px; /* УВЕЛИЧИЛ ЕЩЕ БОЛЬШЕ для мобильных - было 160px */
             }
             
             .search-container {
-                margin: 50px 15px 15px;
+                margin: 8px 15px 8px;
+            }
+            
+            .search-icon img {
+                animation: searchPulseMobile 2s infinite ease-in-out;
+            }
+            
+            .product-button {
+                padding: 8px 0;
+                font-size: 12px;
+                font-weight: 800;
+                margin-top: 0;
+                height: 40px; /* Уменьшаем высоту кнопки на мобильных */
+            }
+        }
+
+        /* Адаптация для средних мобильных устройств */
+        @media (min-width: 361px) and (max-width: 768px) {
+            .logo {
+                max-width: calc(100% - 40px);
+                max-height: 170px; /* Увеличил для планшетов */
+            }
+            
+            .products-grid {
+                margin: 0 20px 15px;
+            }
+            
+            .search-container {
+                margin: 10px 20px 10px;
+            }
+        }
+
+        @keyframes searchPulseMobile {
+            0% {
+                transform: scale(1) translateY(-50%);
+            }
+            50% {
+                transform: scale(0.85) translateY(-50%);
+            }
+            100% {
+                transform: scale(1) translateY(-50%);
             }
         }
 
@@ -334,23 +398,10 @@
                 margin-right: max(20px, env(safe-area-inset-right));
             }
             
-            .fortune-button {
-                right: max(15px, env(safe-area-inset-right));
+            .logo {
+                max-width: calc(100% - max(40px, env(safe-area-inset-left) + env(safe-area-inset-right)));
             }
         }
-
-        /* УБИРАЕМ дублирующий фон .tg-background */
-        /* .tg-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                url('https://i.imgur.com/yFnhT5n.png') no-repeat center center;
-            background-size: cover;
-            z-index: -2;
-        } */
 
         /* Стиль для загрузки изображений */
         .image-loading {
@@ -376,19 +427,11 @@
     </style>
 </head>
 <body>
-    <!-- УБИРАЕМ дублирующий фон для телеграма -->
-    <!-- <div class="tg-background"></div> -->
-    
     <div class="app-container">
-        <!-- Кнопка Фортуна -->
-        <a href="#" class="fortune-button" onclick="openFortuneApp(event)">
-            Фортуна
-        </a>
-
         <!-- Шапка -->
         <div class="header">
             <div class="logo-container">
-                <img src="https://i.imgur.com/6q7Hmr5.png" alt="Логотип" class="logo">
+                <img src="https://i.imgur.com/ApjRG4F.png" alt="Логотип" class="logo">
             </div>
         </div>
 
@@ -400,7 +443,7 @@
             <input 
                 type="text" 
                 class="search-box" 
-                placeholder="Поиск товаров..." 
+                placeholder="Поиск..." 
                 id="searchInput"
             >
         </div>
@@ -532,30 +575,37 @@
 
         // ========== ОСНОВНЫЕ ФУНКЦИИ ==========
 
-        // Функция для открытия приложения Фортуна
-        function openFortuneApp(event) {
-            event.preventDefault();
+        // Создание ripple-эффекта
+        function createRipple(event) {
+            const button = event.currentTarget;
+            const circle = document.createElement("span");
+            const diameter = Math.max(button.clientWidth, button.clientHeight);
+            const radius = diameter / 2;
             
-            const links = [
-                "tg://resolve?domain=Yakuponuch_bot&appname=Yakuponuch",
-                "tg://resolve?domain=Yakuponuch_bot&appname=Yakuponuch&startapp=direct"
-            ];
-
-            console.log('Пробуем открыть Fortune App...');
-
-            if (window.Telegram && window.Telegram.WebApp) {
-                console.log('Используем Telegram WebApp API');
-                window.Telegram.WebApp.openLink(links[0]);
-                
-                setTimeout(() => {
-                    if (document.visibilityState === 'visible') {
-                        console.log('Первая ссылка не сработала, пробуем вторую');
-                        window.Telegram.WebApp.openLink(links[1]);
-                    }
-                }, 1500);
-            } else {
-                alert('Эта кнопка работает только в Telegram. Откройте приложение через бота в Telegram.');
+            const rect = button.getBoundingClientRect();
+            
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${event.clientX - rect.left - radius}px`;
+            circle.style.top = `${event.clientY - rect.top - radius}px`;
+            circle.classList.add("ripple");
+            
+            const ripple = button.getElementsByClassName("ripple")[0];
+            if (ripple) {
+                ripple.remove();
             }
+            
+            button.appendChild(circle);
+        }
+
+        // Анимация нажатия кнопки
+        function animateButtonPress(button) {
+            // Добавляем класс для анимации
+            button.classList.add('pressed');
+            
+            // Удаляем класс после завершения анимации
+            setTimeout(() => {
+                button.classList.remove('pressed');
+            }, 300);
         }
 
         // Загрузка демо-товаров
@@ -632,10 +682,10 @@
                             alt="${product.name}"
                             loading="lazy"
                             onerror="this.src='https://i.imgur.com/1Q9Z8ZJ.png'"
-                            onclick="openProduct('${product.url}')"
+                            onclick="openProduct('${product.url}', event)"
                         >
                     </div>
-                    <button class="product-button" onclick="openProduct('${product.url}')">Открыть</button>
+                    <button class="product-button" onclick="openProduct('${product.url}', event)">ОТКРЫТЬ НА WB</button>
                 </div>
             `).join('');
 
@@ -734,19 +784,58 @@
         }
 
         // Открытие продукта
-        function openProduct(url) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            if (event.currentTarget) {
-                event.currentTarget.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    if (event.currentTarget) {
-                        event.currentTarget.style.transform = '';
+        function openProduct(url, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                // Анимация нажатия кнопки
+                if (event.currentTarget && event.currentTarget.classList.contains('product-button')) {
+                    const button = event.currentTarget;
+                    animateButtonPress(button);
+                    createRipple(event);
+                    
+                    // Небольшая задержка перед открытием ссылки
+                    setTimeout(() => {
+                        if (window.Telegram && window.Telegram.WebApp) {
+                            window.Telegram.WebApp.openLink(url);
+                        } else {
+                            window.open(url, '_blank');
+                        }
+                    }, 200);
+                    return;
+                }
+                
+                // Для клика по изображению
+                if (event.currentTarget && event.currentTarget.classList.contains('product-image')) {
+                    const card = event.currentTarget.closest('.product-card');
+                    const button = card.querySelector('.product-button');
+                    if (button) {
+                        animateButtonPress(button);
+                        
+                        // Создаем искусственное событие для ripple-эффекта
+                        const rect = button.getBoundingClientRect();
+                        const fakeEvent = {
+                            clientX: rect.left + rect.width / 2,
+                            clientY: rect.top + rect.height / 2,
+                            currentTarget: button
+                        };
+                        createRipple(fakeEvent);
+                        
+                        // Небольшая задержка перед открытием ссылки
+                        setTimeout(() => {
+                            if (window.Telegram && window.Telegram.WebApp) {
+                                window.Telegram.WebApp.openLink(url);
+                            } else {
+                                window.open(url, '_blank');
+                            }
+                        }, 200);
+                        return;
                     }
-                }, 150);
+                }
             }
             
+            // Открытие без анимации (на всякий случай)
             if (window.Telegram && window.Telegram.WebApp) {
                 window.Telegram.WebApp.openLink(url);
             } else {
@@ -806,6 +895,23 @@
                 // Настраиваем поиск
                 document.getElementById('searchInput').addEventListener('input', handleSearch);
                 
+                // Добавляем анимацию для лупы при фокусе/расфокусе поля поиска
+                const searchInput = document.getElementById('searchInput');
+                const searchIcon = document.querySelector('.search-icon img');
+                
+                searchInput.addEventListener('focus', function() {
+                    // При фокусе останавливаем анимацию и делаем лупу чуть больше
+                    searchIcon.style.animation = 'none';
+                    setTimeout(() => {
+                        searchIcon.style.animation = 'searchFocus 0.3s ease forwards';
+                    }, 10);
+                });
+                
+                searchInput.addEventListener('blur', function() {
+                    // При потере фокуса возвращаем пульсацию
+                    searchIcon.style.animation = 'searchPulse 2s infinite ease-in-out';
+                });
+                
             } catch (error) {
                 console.error('Ошибка инициализации:', error);
                 allProducts = getDemoProducts();
@@ -837,7 +943,7 @@
             }, 300);
 
             // Обновление каждые 30 секунд
-            setInterval(refreshProducts, 30000);
+            setInterval(refreshProducts, 300000);
             window.addEventListener('focus', refreshProducts);
         });
 
