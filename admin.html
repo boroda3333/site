@@ -973,13 +973,16 @@
                     submitBtn.textContent = '⏳ Добавляем...';
                 }
 
-                const result = await apiRequest('addProduct', {
+ const action = editingProductId ? 'updateProduct' : 'addProduct';
+                const params = {
                     id: editingProductId || 'product_' + Date.now(),
                     name: productData.name,
                     image: productData.image,
                     url: productData.url,
                     order: parseInt(productData.order) || 999
-                });
+                };
+
+                const result = await apiRequest(action, params);
                 
                 if (result.status === 'success') {
                     await loadProducts();
@@ -1035,7 +1038,7 @@
                 document.getElementById('productName').value = product.name;
                 document.getElementById('productImage').value = product.image;
                 document.getElementById('productUrl').value = product.url;
-                document.getElementById('productOrder').value = product.order || 999;
+                document.getElementById('productOrder').value = product.order || 1;
                 
                 editingProductId = productId;
                 
