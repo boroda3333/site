@@ -623,25 +623,29 @@
                     id: "1",
                     name: "Курьерский плащ",
                     image: "https://i.imgur.com/7Q9Z8ZJ.jpg",
-                    url: "https://www.wildberries.ru/catalog/123456/detail.aspx"
+                    url: "https://www.wildberries.ru/catalog/123456/detail.aspx",
+                    order: 1
                 },
                 {
                     id: "2", 
                     name: "Выпрямитель профессиональный",
                     image: "https://i.imgur.com/8Q9Z8ZJ.jpg", 
-                    url: "https://www.wildberries.ru/catalog/789012/detail.aspx"
+                    url: "https://www.wildberries.ru/catalog/789012/detail.aspx",
+                    order: 2
                 },
                 {
                     id: "3",
                     name: "Курьерский пакет", 
                     image: "https://i.imgur.com/9Q9Z8ZJ.jpg",
-                    url: "https://www.wildberries.ru/catalog/345678/detail.aspx"
+                    url: "https://www.wildberries.ru/catalog/345678/detail.aspx",
+                    order: 3
                 },
                 {
                     id: "4",
                     name: "Сохранение безопасности",
                     image: "https://i.imgur.com/0Q9Z8ZJ.jpg",
-                    url: "https://www.wildberries.ru/catalog/901234/detail.aspx"
+                    url: "https://www.wildberries.ru/catalog/901234/detail.aspx",
+                    order: 4
                 }
             ];
         }
@@ -653,7 +657,13 @@
                 const result = await response.json();
                 
                 if (result.status === 'success') {
-                    return result.data;
+                    // Сортируем товары по полю order (от меньшего к большему)
+                    const sortedProducts = result.data.sort((a, b) => {
+                        const orderA = parseInt(a.order) || 999;
+                        const orderB = parseInt(b.order) || 999;
+                        return orderA - orderB;
+                    });
+                    return sortedProducts;
                 } else {
                     throw new Error(result.data);
                 }
@@ -839,17 +849,23 @@
             }
         }
 
-        // Поиск товаров
+        // Поиск товаров с сохранением сортировки
         function searchProducts(products, term) {
             const searchTerm = term.toLowerCase().trim();
             
             if (searchTerm === '') {
+                // При пустом поиске возвращаем товары, уже отсортированные по order
                 return products;
             }
 
-            return products.filter(product => 
-                product.name.toLowerCase().includes(searchTerm)
-            );
+            // При поиске фильтруем результаты
+            return products
+                .filter(product => product.name.toLowerCase().includes(searchTerm))
+                .sort((a, b) => {
+                    const orderA = parseInt(a.order) || 999;
+                    const orderB = parseInt(b.order) || 999;
+                    return orderA - orderB;
+                });
         }
 
         // Обработка поиска
@@ -874,7 +890,7 @@
         // Основная инициализация каталога
         async function initCatalog() {
             try {
-                // Загружаем товары
+                // Загружаем товары (уже отсортированные по order)
                 allProducts = await loadProductsFromAPI();
                 
                 // Рендерим товары
@@ -938,7 +954,7 @@
                 initCatalog();
             }, 300);
 
-            // Обновление каждые 30 секунд
+            // Обновление каждые 5 минут
             setInterval(refreshProducts, 300000);
             window.addEventListener('focus', refreshProducts);
         });
