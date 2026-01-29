@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Админ-панель - Управление товарами</title>
     <style>
+        /* ВСЕ СТИЛИ ОСТАЮТСЯ ТАКИМИ ЖЕ КАК В ПРЕДЫДУЩЕЙ ВЕРСИИ */
         * {
             margin: 0;
             padding: 0;
@@ -30,7 +31,6 @@
             justify-content: center;
         }
 
-        /* Стили для формы логина */
         .login-container {
             background: white;
             border-radius: 16px;
@@ -141,7 +141,7 @@
             margin-bottom: 25px;
             padding-bottom: 15px;
             border-bottom: 2px solid #f1f3f4;
-            padding-right: 80px; /* Для кнопки выхода */
+            padding-right: 80px;
         }
 
         .header h1 {
@@ -423,7 +423,6 @@
             color: #2d3748;
         }
 
-        /* Адаптация для мобильных устройств */
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -508,7 +507,6 @@
             }
         }
 
-        /* Адаптация для очень маленьких экранов */
         @media (max-width: 360px) {
             .login-container {
                 padding: 20px 15px;
@@ -540,7 +538,6 @@
             }
         }
 
-        /* Адаптация для планшетов */
         @media (min-width: 769px) and (max-width: 1024px) {
             .admin-container {
                 max-width: 90%;
@@ -565,7 +562,6 @@
             }
         }
 
-        /* Адаптация для десктопов */
         @media (min-width: 1025px) {
             .admin-container {
                 padding: 30px 25px;
@@ -623,7 +619,6 @@
             }
         }
 
-        /* Большие экраны */
         @media (min-width: 1440px) {
             .admin-container {
                 max-width: 1400px;
@@ -634,7 +629,6 @@
             }
         }
 
-        /* Поддержка темной темы */
         @media (prefers-color-scheme: dark) {
             .login-container, .admin-container {
                 background: #2d3748;
@@ -678,7 +672,6 @@
             }
         }
 
-        /* Поддержка Safe Area для iPhone X и новее */
         @supports(padding: max(0px)) {
             body {
                 padding-left: max(10px, env(safe-area-inset-left));
@@ -816,7 +809,7 @@
         };
 
         // 🔥 ВАШ URL GOOGLE APPS SCRIPT API
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzLhFB5S9SdbAUjEwu-nRNFh-UfptTYfVMh_xq6f16BBINVXl8bCUf4vU5hCvAjZC6apw/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwPa4cN-iJ_fcBawgPTGb-Ky0V9Z2i8IYBfU5Ots-BXGJaUoW6ShZTy9GyJHXTf2QaQNw/exec';
 
         // Хранилище товаров
         let products = [];
@@ -960,24 +953,28 @@
             }
         }
 
-        // Добавить или обновить товар (ИСПРАВЛЕННАЯ ФУНКЦИЯ)
+        // Добавить или обновить товар - УПРОЩЕННАЯ ВЕРСИЯ
         async function saveProduct(productData) {
             if (!isAuthenticated) return false;
             
             try {
                 submitBtn.disabled = true;
                 
+                // Всегда используем addProduct, даже для редактирования
+                // Но для редактирования мы удаляем старую запись сначала
                 if (editingProductId) {
                     submitBtn.textContent = '⏳ Обновляем...';
-                    // Для редактирования: удаляем старый товар и добавляем новый с обновленными данными
+                    
+                    // Удаляем старый товар
                     await deleteProductSilently(editingProductId);
                     
+                    // Добавляем с тем же ID
                     const result = await apiRequest('addProduct', {
-                        id: editingProductId, // Сохраняем тот же ID
+                        id: editingProductId,
                         name: productData.name,
                         image: productData.image,
                         url: productData.url,
-                        order: parseInt(productData.order) || 999
+                        order: parseInt(productData.order) || 1
                     });
                     
                     if (result.status === 'success') {
@@ -997,7 +994,7 @@
                         name: productData.name,
                         image: productData.image,
                         url: productData.url,
-                        order: parseInt(productData.order) || 999
+                        order: parseInt(productData.order) || 1
                     });
                     
                     if (result.status === 'success') {
