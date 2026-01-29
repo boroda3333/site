@@ -310,6 +310,28 @@
             }
         }
 
+        /* Стиль для загрузки изображений */
+        .image-loading {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Ленивая загрузка изображений */
+        .lazy-image {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .lazy-image.loaded {
+            opacity: 1;
+        }
+
         /* Адаптация для очень маленьких экранов */
         @media (max-width: 360px) {
             .products-grid {
@@ -404,28 +426,6 @@
             .logo {
                 max-width: calc(100% - max(10px, env(safe-area-inset-left) + env(safe-area-inset-right)));
             }
-        }
-
-        /* Стиль для загрузки изображений */
-        .image-loading {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-        }
-
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        /* Ленивая загрузка изображений */
-        .lazy-image {
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .lazy-image.loaded {
-            opacity: 1;
         }
     </style>
 </head>
@@ -673,6 +673,83 @@
             }
         }
 
+        // Функция трекинга кликов
+        async function trackProductClick(productId) {
+            try {
+                // Отправляем запрос на сервер
+                await fetch(API_URL, {
+                    method: 'POST',
+                    body: new URLSearchParams({
+                        action: 'trackClick',
+                        productId: productId
+                    })
+                });
+                
+                // Можно обновить локальный счетчик для мгновенного отображения
+                const product = allProducts.find(p => p.id === productId);
+                if (product) {
+                    product.clicks = (product.clicks || 0) + 1;
+                }
+                
+            } catch (error) {
+                console.error('Ошибка при трекинге клика:', error);
+            }
+        }
+
+        // Открытие продукта с трекингом
+        function openProduct(url, productId, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                // Получаем карточку товара
+                let card;
+                if (event.currentTarget && event.currentTarget.classList.contains('product-button')) {
+                    card = event.currentTarget.closest('.product-card');
+                } else if (event.currentTarget && event.currentTarget.classList.contains('product-image')) {
+                    card = event.currentTarget.closest('.product-card');
+                }
+                
+                if (card) {
+                    // Анимация нажатия всей карточки
+                    animateCardPress(card);
+                    
+                    // Ripple-эффект на кнопке
+                    const button = card.querySelector('.product-button');
+                    if (button) {
+                        createRipple({
+                            clientX: button.getBoundingClientRect().left + button.clientWidth / 2,
+                            clientY: button.getBoundingClientRect().top + button.clientHeight / 2,
+                            currentTarget: button
+                        });
+                    }
+                    
+                    // Отправляем статистику
+                    trackProductClick(productId);
+                    
+                    // Небольшая задержка перед открытием ссылки
+                    setTimeout(() => {
+                        if (window.Telegram && window.Telegram.WebApp) {
+                            window.Telegram.WebApp.openLink(url);
+                        } else {
+                            window.open(url, '_blank');
+                        }
+                    }, 200);
+                    return;
+                }
+            }
+            
+            // Отправляем статистику
+            trackProductClick(productId);
+            
+            // Открытие без анимации (на всякий случай)
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.openLink(url);
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+
         // Рендер товаров с ленивой загрузкой
         function renderProducts(productsArray) {
             const grid = document.getElementById('productsGrid');
@@ -700,10 +777,10 @@
                             alt="${product.name}"
                             loading="lazy"
                             onerror="this.src='https://i.imgur.com/1Q9Z8ZJ.png'"
-                            onclick="openProduct('${product.url}', event)"
+                            onclick="openProduct('${product.url}', '${product.id}', event)"
                         >
                     </div>
-                    <button class="product-button" onclick="openProduct('${product.url}', event)">ОТКРЫТЬ НА WB</button>
+                    <button class="product-button" onclick="openProduct('${product.url}', '${product.id}', event)">ОТКРЫТЬ НА WB</button>
                 </div>
             `).join('');
 
@@ -799,54 +876,6 @@
                     container.classList.remove('image-loading');
                 }
             };
-        }
-
-        // Открытие продукта
-        function openProduct(url, event) {
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                
-                // Получаем карточку товара
-                let card;
-                if (event.currentTarget && event.currentTarget.classList.contains('product-button')) {
-                    card = event.currentTarget.closest('.product-card');
-                } else if (event.currentTarget && event.currentTarget.classList.contains('product-image')) {
-                    card = event.currentTarget.closest('.product-card');
-                }
-                
-                if (card) {
-                    // Анимация нажатия всей карточки
-                    animateCardPress(card);
-                    
-                    // Ripple-эффект на кнопке
-                    const button = card.querySelector('.product-button');
-                    if (button) {
-                        createRipple({
-                            clientX: button.getBoundingClientRect().left + button.clientWidth / 2,
-                            clientY: button.getBoundingClientRect().top + button.clientHeight / 2,
-                            currentTarget: button
-                        });
-                    }
-                    
-                    // Небольшая задержка перед открытием ссылки
-                    setTimeout(() => {
-                        if (window.Telegram && window.Telegram.WebApp) {
-                            window.Telegram.WebApp.openLink(url);
-                        } else {
-                            window.open(url, '_blank');
-                        }
-                    }, 200);
-                    return;
-                }
-            }
-            
-            // Открытие без анимации (на всякий случай)
-            if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.openLink(url);
-            } else {
-                window.open(url, '_blank');
-            }
         }
 
         // Поиск товаров с сохранением сортировки
@@ -968,8 +997,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
