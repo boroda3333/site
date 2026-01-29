@@ -732,10 +732,315 @@
         </div>
 
         <!-- Табы -->
-        <div class="tabs">
-            <div class="tab active" onclick="showTab('add')">➕ Добавить товар</div>
-            <div class="tab" onclick="showTab('manage')">📦 Управление товарами</div>
+<div class="tabs">
+    <div class="tab active" onclick="showTab('add')">➕ Добавить товар</div>
+    <div class="tab" onclick="showTab('manage')">📦 Управление товарами</div>
+    <div class="tab" onclick="showTab('stats')">📊 Статистика кликов</div>
+</div>
+
+<!-- Новый таб для статистики -->
+<div id="statsTab" class="tab-content">
+    <div class="form-section">
+        <h3 class="form-title">Статистика кликов</h3>
+        
+        <!-- Период выборки -->
+        <div class="form-group">
+            <label class="form-label">Период:</label>
+            <select class="form-input" id="statsPeriod" onchange="loadStatistics()">
+                <option value="day">За сегодня</option>
+                <option value="week">За неделю</option>
+                <option value="month">За месяц</option>
+            </select>
         </div>
+        
+        <!-- Кнопки экспорта -->
+        <div class="form-actions" style="margin-bottom: 20px;">
+            <button class="btn btn-secondary" onclick="exportStats('csv')">
+                📥 Экспорт в CSV
+            </button>
+            <button class="btn btn-primary" onclick="exportStats('excel')">
+                📊 Экспорт в Excel
+            </button>
+        </div>
+        
+        <!-- Общая статистика -->
+        <div class="stats-summary" id="statsSummary" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-number" id="totalClicks">0</div>
+                <div class="stat-label">Всего кликов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalProductsWithClicks">0</div>
+                <div class="stat-label">Товаров с кликами</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avgClicksPerProduct">0</div>
+                <div class="stat-label">Среднее на товар</div>
+            </div>
+        </div>
+        
+        <!-- Таблица статистики -->
+        <div id="statsTableContainer">
+            <div class="loading" id="statsLoading">
+                <div class="loading-spinner"></div>
+                <div>Загрузка статистики...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Добавьте стили для таблицы статистики */
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.stats-table th {
+    background: #f8fafc;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #4a5568;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.stats-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.stats-table tr:hover {
+    background: #f7fafc;
+}
+
+.stats-table .product-name {
+    font-weight: 500;
+    color: #2d3748;
+}
+
+.stats-table .clicks-count {
+    font-weight: 600;
+    color: #805ad5;
+}
+
+.stats-table .percentage {
+    color: #718096;
+    font-size: 13px;
+}
+
+.stats-summary {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+</style>
+
+<script>
+// Добавьте в JavaScript админ-панели:
+
+// Функция загрузки статистики
+async function loadStatistics() {
+    const period = document.getElementById('statsPeriod').value;
+    const container = document.getElementById('statsTableContainer');
+    
+    container.innerHTML = `
+        <div class="loading" id="statsLoading">
+            <div class="loading-spinner"></div>
+            <div>Загрузка статистики...</div>
+        </div>
+    `;
+    
+    try {
+        const result = await apiRequest('getStats', { period: period });
+        
+        if (result.status === 'success') {
+            displayStatistics(result.data);
+        } else {
+            throw new Error(result.data);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки статистики:', error);
+        container.innerHTML = `
+            <div class="alert alert-error">
+                Ошибка загрузки статистики: ${error.message}
+            </div>
+        `;
+    }
+}
+
+// Функция отображения статистики
+function displayStatistics(stats) {
+    const container = document.getElementById('statsTableContainer');
+    const summaryContainer = document.getElementById('statsSummary');
+    
+    // Показываем блок с общей статистикой
+    summaryContainer.style.display = 'flex';
+    
+    // Обновляем общую статистику
+    document.getElementById('totalClicks').textContent = stats.totalClicks || 0;
+    document.getElementById('totalProductsWithClicks').textContent = stats.products.length || 0;
+    
+    const avgClicks = stats.products.length > 0 ? 
+        (stats.totalClicks / stats.products.length).toFixed(1) : 0;
+    document.getElementById('avgClicksPerProduct').textContent = avgClicks;
+    
+    if (!stats.products || stats.products.length === 0) {
+        container.innerHTML = `
+            <div class="alert alert-warning">
+                Нет данных о кликах за выбранный период
+            </div>
+        `;
+        return;
+    }
+    
+    // Создаем таблицу
+    let tableHTML = `
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Товар</th>
+                    <th>Кликов</th>
+                    <th>Процент</th>
+                    <th>Статистика по дням</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    stats.products.forEach((product, index) => {
+        const percentage = stats.totalClicks > 0 ? 
+            ((product.clicks / stats.totalClicks) * 100).toFixed(1) + '%' : '0%';
+        
+        // Формируем строку с дневной статистикой
+        let dailyStats = '';
+        if (product.dailyClicks && Object.keys(product.dailyClicks).length > 0) {
+            const days = Object.entries(product.dailyClicks)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3); // Показываем топ-3 дня
+            
+            dailyStats = days.map(([date, clicks]) => 
+                `${date}: ${clicks}`
+            ).join('<br>');
+        }
+        
+        tableHTML += `
+            <tr>
+                <td>${index + 1}</td>
+                <td class="product-name">${product.name}</td>
+                <td class="clicks-count">${product.clicks}</td>
+                <td class="percentage">${percentage}</td>
+                <td style="font-size: 12px; color: #718096;">${dailyStats || 'Нет данных'}</td>
+            </tr>
+        `;
+    });
+    
+    tableHTML += `
+            </tbody>
+        </table>
+        <div style="margin-top: 15px; color: #718096; font-size: 13px;">
+            <strong>Период:</strong> ${stats.period === 'day' ? 'За сегодня' : stats.period === 'week' ? 'За неделю' : 'За месяц'} 
+            (${new Date(stats.startDate).toLocaleDateString('ru-RU')} - ${new Date(stats.endDate).toLocaleDateString('ru-RU')})
+        </div>
+    `;
+    
+    container.innerHTML = tableHTML;
+}
+
+// Функция экспорта статистики
+async function exportStats(format) {
+    const period = document.getElementById('statsPeriod').value;
+    
+    try {
+        const result = await apiRequest('exportStats', { 
+            period: period, 
+            format: format 
+        });
+        
+        if (result.status === 'success') {
+            if (format === 'csv') {
+                // Скачиваем CSV файл
+                const blob = new Blob([result.data.content], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = result.data.filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showAlert('✅ CSV файл готов к скачиванию');
+            } else if (format === 'excel') {
+                showAlert(`✅ Статистика экспортирована в лист: ${result.data.sheetName}`);
+            }
+        } else {
+            throw new Error(result.data);
+        }
+    } catch (error) {
+        console.error('Ошибка экспорта:', error);
+        showAlert('❌ Ошибка при экспорте статистики', 'error');
+    }
+}
+
+// В функции showTab добавьте загрузку статистики при переключении
+function showTab(tabName) {
+    if (!isAuthenticated) return;
+    
+    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    document.querySelectorAll('.tab')[tabName === 'add' ? 0 : tabName === 'manage' ? 1 : 2].classList.add('active');
+    document.getElementById(tabName + 'Tab').classList.add('active');
+    
+    if (tabName === 'manage') {
+        loadProducts();
+    } else if (tabName === 'stats') {
+        loadStatistics();
+    }
+}
+
+// В функции renderProducts отображайте количество кликов
+function renderProducts() {
+    // ... существующий код ...
+    
+    productsList.innerHTML = sortedProducts.map(product => `
+        <div class="product-item">
+            <div class="product-main">
+                <img src="${product.image}" alt="${product.name}" class="product-image"
+                     onerror="this.src='https://via.placeholder.com/70x70/e2e8f0/64748b?text=📦'">
+                <div class="product-info">
+                    <div class="product-name">
+                        <span class="product-order">${product.order || 999}</span>
+                        ${product.name}
+                    </div>
+                    <div style="color: #718096; font-size: 12px; margin-top: 4px;">
+                        👆 Кликов: <strong>${product.clicks || 0}</strong>
+                    </div>
+                    <a href="${product.url}" target="_blank" class="product-url" onclick="event.stopPropagation()">
+                        ${product.url.length > 50 ? product.url.substring(0, 50) + '...' : product.url}
+                    </a>
+                </div>
+            </div>
+            <div class="product-actions">
+                <button class="btn btn-edit" onclick="editProduct('${product.id}')">
+                    ✏️ Редактировать
+                </button>
+                <button class="btn btn-danger" onclick="deleteProduct('${product.id}')">
+                    🗑️ Удалить
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+</script>
 
         <!-- Уведомления -->
         <div id="alertContainer"></div>
@@ -1177,5 +1482,6 @@
     </script>
 </body>
 </html>
+
 
 
