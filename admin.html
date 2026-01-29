@@ -960,7 +960,7 @@
             }
         }
 
-        // Добавить или обновить товар
+        // Добавить или обновить товар (ИСПРАВЛЕННАЯ ФУНКЦИЯ)
         async function saveProduct(productData) {
             if (!isAuthenticated) return false;
             
@@ -969,34 +969,46 @@
                 
                 if (editingProductId) {
                     submitBtn.textContent = '⏳ Обновляем...';
-                } else {
-                    submitBtn.textContent = '⏳ Добавляем...';
-                }
-
- const action = editingProductId ? 'updateProduct' : 'addProduct';
-                const params = {
-                    id: editingProductId || 'product_' + Date.now(),
-                    name: productData.name,
-                    image: productData.image,
-                    url: productData.url,
-                    order: parseInt(productData.order) || 999
-                };
-
-                const result = await apiRequest(action, params);
-                
-                if (result.status === 'success') {
-                    await loadProducts();
+                    // Для редактирования: удаляем старый товар и добавляем новый с обновленными данными
+                    await deleteProductSilently(editingProductId);
                     
-                    if (editingProductId) {
+                    const result = await apiRequest('addProduct', {
+                        id: editingProductId, // Сохраняем тот же ID
+                        name: productData.name,
+                        image: productData.image,
+                        url: productData.url,
+                        order: parseInt(productData.order) || 999
+                    });
+                    
+                    if (result.status === 'success') {
+                        await loadProducts();
                         showAlert('✅ Товар успешно обновлен!');
                         cancelEdit();
+                        return true;
                     } else {
+                        throw new Error(result.data);
+                    }
+                } else {
+                    // Добавление нового товара
+                    submitBtn.textContent = '⏳ Добавляем...';
+                    
+                    const result = await apiRequest('addProduct', {
+                        id: 'product_' + Date.now(),
+                        name: productData.name,
+                        image: productData.image,
+                        url: productData.url,
+                        order: parseInt(productData.order) || 999
+                    });
+                    
+                    if (result.status === 'success') {
+                        await loadProducts();
                         showAlert('✅ Товар успешно добавлен!');
                         addProductForm.reset();
+                        document.getElementById('productOrder').value = 1;
+                        return true;
+                    } else {
+                        throw new Error(result.data);
                     }
-                    return true;
-                } else {
-                    throw new Error(result.data);
                 }
             } catch (error) {
                 console.error('Ошибка сохранения:', error);
@@ -1008,7 +1020,18 @@
             }
         }
 
-        // Удалить товар
+        // Тихий удаление товара (без подтверждения и уведомлений)
+        async function deleteProductSilently(productId) {
+            try {
+                const result = await apiRequest('deleteProduct', { id: productId });
+                return result.status === 'success';
+            } catch (error) {
+                console.error('Ошибка при удалении:', error);
+                return false;
+            }
+        }
+
+        // Удалить товар (с подтверждением)
         async function deleteProduct(productId) {
             if (!isAuthenticated) return;
             
