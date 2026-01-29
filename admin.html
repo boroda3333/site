@@ -280,6 +280,17 @@
             -webkit-box-orient: vertical;
         }
 
+        .product-order {
+            color: #4a5568;
+            font-size: 12px;
+            background: #e2e8f0;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-right: 8px;
+            font-weight: 600;
+        }
+
         .product-url {
             color: #667eea;
             font-size: 13px;
@@ -700,6 +711,12 @@
                 🔑 Войти
             </button>
         </form>
+        
+        <div class="login-credentials">
+            <strong>Тестовые данные для входа:</strong><br>
+            Логин: <code>admin</code><br>
+            Пароль: <code>Wave_2_0_2_5!</code>
+        </div>
     </div>
 
     <!-- Админ-панель (скрыта до авторизации) -->
@@ -755,6 +772,15 @@
                                    placeholder="https://www.wildberries.ru/catalog/..." required>
                         </div>
 
+                        <div class="form-group">
+                            <label class="form-label">Порядок сортировки *</label>
+                            <input type="number" class="form-input" id="productOrder" 
+                                   placeholder="1 (первый в списке)" required min="1" value="1">
+                            <small style="color: #718096; font-size: 12px; margin-top: 4px; display: block;">
+                                Чем меньше число, тем выше товар в списке
+                            </small>
+                        </div>
+
                         <div class="form-actions">
                             <button type="button" class="btn btn-secondary cancel-edit" id="cancelEdit" onclick="cancelEdit()">
                                 ❌ Отменить
@@ -770,7 +796,7 @@
             <!-- Таб: Управление товарами -->
             <div id="manageTab" class="tab-content">
                 <div class="form-section">
-                    <h3 class="form-title">Все товары</h3>
+                    <h3 class="form-title">Все товары (сортировка по порядку)</h3>
                     <div class="products-list" id="productsList">
                         <div class="loading">
                             <div class="loading-spinner"></div>
@@ -951,7 +977,8 @@
                     id: editingProductId || 'product_' + Date.now(),
                     name: productData.name,
                     image: productData.image,
-                    url: productData.url
+                    url: productData.url,
+                    order: parseInt(productData.order) || 999
                 });
                 
                 if (result.status === 'success') {
@@ -1008,6 +1035,7 @@
                 document.getElementById('productName').value = product.name;
                 document.getElementById('productImage').value = product.image;
                 document.getElementById('productUrl').value = product.url;
+                document.getElementById('productOrder').value = product.order || 999;
                 
                 editingProductId = productId;
                 
@@ -1026,6 +1054,7 @@
         function cancelEdit() {
             editingProductId = null;
             addProductForm.reset();
+            document.getElementById('productOrder').value = 1;
             formTitle.textContent = 'Добавить новый товар';
             productFormSection.classList.remove('edit-mode');
             cancelEditBtn.classList.remove('show');
@@ -1059,13 +1088,23 @@
                 return;
             }
 
-            productsList.innerHTML = products.map(product => `
+            // Сортируем товары по порядку
+            const sortedProducts = [...products].sort((a, b) => {
+                const orderA = parseInt(a.order) || 999;
+                const orderB = parseInt(b.order) || 999;
+                return orderA - orderB;
+            });
+
+            productsList.innerHTML = sortedProducts.map(product => `
                 <div class="product-item">
                     <div class="product-main">
                         <img src="${product.image}" alt="${product.name}" class="product-image"
                              onerror="this.src='https://via.placeholder.com/70x70/e2e8f0/64748b?text=📦'">
                         <div class="product-info">
-                            <div class="product-name">${product.name}</div>
+                            <div class="product-name">
+                                <span class="product-order">${product.order || 999}</span>
+                                ${product.name}
+                            </div>
                             <a href="${product.url}" target="_blank" class="product-url" onclick="event.stopPropagation()">
                                 ${product.url.length > 50 ? product.url.substring(0, 50) + '...' : product.url}
                             </a>
@@ -1091,11 +1130,17 @@
             const productData = {
                 name: document.getElementById('productName').value.trim(),
                 image: document.getElementById('productImage').value.trim(),
-                url: document.getElementById('productUrl').value.trim()
+                url: document.getElementById('productUrl').value.trim(),
+                order: document.getElementById('productOrder').value.trim()
             };
 
-            if (!productData.name || !productData.image || !productData.url) {
+            if (!productData.name || !productData.image || !productData.url || !productData.order) {
                 showAlert('❌ Заполните все поля', 'error');
+                return;
+            }
+
+            if (isNaN(productData.order) || parseInt(productData.order) < 1) {
+                showAlert('❌ Порядок должен быть числом больше 0', 'error');
                 return;
             }
 
@@ -1109,4 +1154,3 @@
     </script>
 </body>
 </html>
-
